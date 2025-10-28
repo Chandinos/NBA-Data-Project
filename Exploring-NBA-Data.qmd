@@ -1,0 +1,57 @@
+---
+title: "nba_Data_Project"
+format: html
+editor: visual
+---
+
+```{r}
+library(tidyverse)
+```
+## NBA Play-by-Play Data (2015-2021). The data is imported from Kaggle.
+```{r}
+#Reading in NBA Play-by-Play data sets
+nba_2016 <- read.csv("NBA_PBP_2015-16.csv")
+nba_2017 <- read.csv("NBA_PBP_2016-17.csv")
+nba_2018 <- read.csv("NBA_PBP_2017-18.csv")
+nba_2019 <- read.csv("NBA_PBP_2018-19.csv")
+nba_2020 <- read.csv("NBA_PBP_2019-20.csv")
+nba_2021 <- read.csv("NBA_PBP_2020-21.csv")
+```
+
+### Inspection of the data sets to see if they are suitable to merge into one larger data set.
+```{r}
+#Putting the data sets into a list.
+nba_list <- list(nba_2016, nba_2017, nba_2018, nba_2019, nba_2020, nba_2021)
+
+#Getting the unique column names from each data set.
+nba_colnames <- unique(unlist(map(nba_list, names)))
+nba_colnames
+
+#Identifying missing columns.
+nba_missingcols <- map(nba_list, ~ setdiff(nba_colnames, names(.x))) |> set_names(2016:2021)
+nba_missingcols
+
+#nba_2020 has an extra column, "X", that the others do not. Going to check if it consists of NA values.
+all(is.na(nba_2020$X))
+
+#Dropping the column of NA values from the nba_2020 data set.
+nba_2020 <- nba_2020 |> select(-X)
+
+## Data is ready to merge ##
+```
+
+```{r}
+#Adding a year column to each data set as preparation to merge the data sets while still being able to identify what year the observation came from.
+nba_2016 <- nba_2016 |> mutate(year = 2016)
+nba_2017 <- nba_2017 |> mutate(year = 2017)
+nba_2018 <- nba_2018 |> mutate(year = 2018)
+nba_2019 <- nba_2019 |> mutate(year = 2019)
+nba_2020 <- nba_2020 |> mutate(year = 2020)
+nba_2021 <- nba_2021 |> mutate(year = 2021)
+
+#Combining all 6 data sets into one larger data set.
+
+```
+
+```
+
