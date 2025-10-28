@@ -10,12 +10,12 @@ library(tidyverse)
 ## NBA Play-by-Play Data (2015-2021). The data is imported from Kaggle.
 ```{r}
 #Reading in NBA Play-by-Play data sets
-nba_2016 <- read.csv("NBA_PBP_2015-16.csv")
-nba_2017 <- read.csv("NBA_PBP_2016-17.csv")
-nba_2018 <- read.csv("NBA_PBP_2017-18.csv")
-nba_2019 <- read.csv("NBA_PBP_2018-19.csv")
-nba_2020 <- read.csv("NBA_PBP_2019-20.csv")
-nba_2021 <- read.csv("NBA_PBP_2020-21.csv")
+nba_2016 <- read.csv("rawdata/csv/NBA_PBP_2015-16.csv")
+nba_2017 <- read.csv("rawdata/csv/NBA_PBP_2016-17.csv")
+nba_2018 <- read.csv("rawdata/csv/NBA_PBP_2017-18.csv")
+nba_2019 <- read.csv("rawdata/csv/NBA_PBP_2018-19.csv")
+nba_2020 <- read.csv("rawdata/csv/NBA_PBP_2019-20.csv")
+nba_2021 <- read.csv("rawdata/csv/NBA_PBP_2020-21.csv")
 ```
 
 ### Inspection of the data sets to see if they are suitable to merge into one larger data set.
