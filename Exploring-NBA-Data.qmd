@@ -7,9 +7,11 @@ editor: visual
 ```{r}
 library(tidyverse)
 ```
-## NBA Play-by-Play Data (2015-2021). The data is imported from Kaggle.
+
+## Reading NBA Play-by-Play Data (2015-2021)
+
 ```{r}
-#Reading in NBA Play-by-Play data sets
+#Reading in NBA Play-by-Play data sets.
 nba_2016 <- read_csv("rawdata/csv/NBA_PBP_2015-16.csv")
 nba_2017 <- read_csv("rawdata/csv/NBA_PBP_2016-17.csv")
 nba_2018 <- read_csv("rawdata/csv/NBA_PBP_2017-18.csv")
@@ -19,10 +21,12 @@ nba_2021 <- read_csv("rawdata/csv/NBA_PBP_2020-21.csv")
 ```
 
 ### Inspection of the data sets to see if they are suitable to merge into one larger data set.
+
 ```{r}
 #Putting the data sets into a list.
 nba_list <- list(nba_2016, nba_2017, nba_2018, nba_2019, nba_2020, nba_2021)
 
+#Getting the union of all column names to see which columns are missing from each dataset.
 nba_colnames <- nba_list |> map(names) |> unlist() |> unique() 
 
 #Identifying missing columns.
@@ -33,6 +37,7 @@ nba_missingcols
 ```
 
 ### Cleaning of any anomalies in the data.
+
 ```{r}
 #nba_2020 has an extra column, "X", that the others do not. Going to check if it consists of NA values.
 all(is.na(nba_2020$X))
@@ -42,6 +47,7 @@ nba_2020 <- nba_2020 |> select(-X)
 ```
 
 ### Adding a year column to every data set. When merged together, the year column will identify what data set (year) the observation is from.
+
 ```{r}
 #Adding a year column..
 nba_2016 <- nba_2016 |> mutate(year = 2016)
@@ -52,8 +58,8 @@ nba_2020 <- nba_2020 |> mutate(year = 2020)
 nba_2021 <- nba_2021 |> mutate(year = 2021)
 ```
 
+### Verifying compatability between data sets for a merge & merging the data sets
 
-### Verifying compability between datasets for a merge & merging the data sets
 ```{r}
 #Going to double check that all data sets share the same column names (after removing X).
 map(list(nba_2016, nba_2017, nba_2018, nba_2019, nba_2020, nba_2021), names)
@@ -64,3 +70,4 @@ nba_combined <- bind_rows(nba_2016, nba_2017, nba_2018, nba_2019, nba_2020, nba_
 
 ```
 
+## 
