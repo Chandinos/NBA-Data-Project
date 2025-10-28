@@ -40,10 +40,10 @@ nba_missingcols
 
 ```{r}
 #nba_2020 has an extra column, "X", that the others do not. Going to check if it consists of NA values.
-all(is.na(nba_2020$X))
+all(is.na(nba_2020$`...41`))
 
 #Dropping the column of NA values from the nba_2020 data set.
-nba_2020 <- nba_2020 |> select(-X)
+nba_2020 <- nba_2020 |> select(-`...41`)
 ```
 
 ### Adding a year column to every data set. When merged together, the year column will identify what data set (year) the observation is from.
@@ -70,4 +70,4 @@ nba_combined <- bind_rows(nba_2016, nba_2017, nba_2018, nba_2019, nba_2020, nba_
 
 ```
 
-## 
+## Exploratory Data Analysis
