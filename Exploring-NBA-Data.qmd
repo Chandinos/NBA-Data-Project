@@ -10,12 +10,12 @@ library(tidyverse)
 ## NBA Play-by-Play Data (2015-2021). The data is imported from Kaggle.
 ```{r}
 #Reading in NBA Play-by-Play data sets
-nba_2016 <- read.csv("rawdata/csv/NBA_PBP_2015-16.csv")
-nba_2017 <- read.csv("rawdata/csv/NBA_PBP_2016-17.csv")
-nba_2018 <- read.csv("rawdata/csv/NBA_PBP_2017-18.csv")
-nba_2019 <- read.csv("rawdata/csv/NBA_PBP_2018-19.csv")
-nba_2020 <- read.csv("rawdata/csv/NBA_PBP_2019-20.csv")
-nba_2021 <- read.csv("rawdata/csv/NBA_PBP_2020-21.csv")
+nba_2016 <- read_csv("rawdata/csv/NBA_PBP_2015-16.csv")
+nba_2017 <- read_csv("rawdata/csv/NBA_PBP_2016-17.csv")
+nba_2018 <- read_csv("rawdata/csv/NBA_PBP_2017-18.csv")
+nba_2019 <- read_csv("rawdata/csv/NBA_PBP_2018-19.csv")
+nba_2020 <- read_csv("rawdata/csv/NBA_PBP_2019-20.csv")
+nba_2021 <- read_csv("rawdata/csv/NBA_PBP_2020-21.csv")
 ```
 
 ### Inspection of the data sets to see if they are suitable to merge into one larger data set.
@@ -23,35 +23,44 @@ nba_2021 <- read.csv("rawdata/csv/NBA_PBP_2020-21.csv")
 #Putting the data sets into a list.
 nba_list <- list(nba_2016, nba_2017, nba_2018, nba_2019, nba_2020, nba_2021)
 
-#Getting the unique column names from each data set.
-nba_colnames <- unique(unlist(map(nba_list, names)))
-nba_colnames
+nba_colnames <- nba_list |> map(names) |> unlist() |> unique() 
 
 #Identifying missing columns.
 nba_missingcols <- map(nba_list, ~ setdiff(nba_colnames, names(.x))) |> set_names(2016:2021)
 nba_missingcols
 
+## nba_2020 has an extra X column ##
+```
+
+### Cleaning of any anomalies in the data.
+```{r}
 #nba_2020 has an extra column, "X", that the others do not. Going to check if it consists of NA values.
 all(is.na(nba_2020$X))
 
 #Dropping the column of NA values from the nba_2020 data set.
 nba_2020 <- nba_2020 |> select(-X)
-
-## Data is ready to merge ##
 ```
 
+### Adding a year column to every data set. When merged together, the year column will identify what data set (year) the observation is from.
 ```{r}
-#Adding a year column to each data set as preparation to merge the data sets while still being able to identify what year the observation came from.
+#Adding a year column..
 nba_2016 <- nba_2016 |> mutate(year = 2016)
 nba_2017 <- nba_2017 |> mutate(year = 2017)
 nba_2018 <- nba_2018 |> mutate(year = 2018)
 nba_2019 <- nba_2019 |> mutate(year = 2019)
 nba_2020 <- nba_2020 |> mutate(year = 2020)
 nba_2021 <- nba_2021 |> mutate(year = 2021)
-
-#Combining all 6 data sets into one larger data set.
-
 ```
+
+
+### Verifying compability between datasets for a merge & merging the data sets
+```{r}
+#Going to double check that all data sets share the same column names (after removing X).
+map(list(nba_2016, nba_2017, nba_2018, nba_2019, nba_2020, nba_2021), names)
+## They match ##
+
+#Combining all 6 data sets into one larger data set. For safety, I am going to use rbind to accomplish this. That way if I missed something in the investigation, it will return an error.
+nba_combined <- bind_rows(nba_2016, nba_2017, nba_2018, nba_2019, nba_2020, nba_2021)
 
 ```
 
