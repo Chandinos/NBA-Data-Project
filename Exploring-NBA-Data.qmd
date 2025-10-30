@@ -1,5 +1,5 @@
 ---
-title: "nba_Data_Project"
+title: "NBA Play-by-Play Data Project"
 format: html
 editor: visual
 ---
@@ -63,11 +63,42 @@ nba_2021 <- nba_2021 |> mutate(year = 2021)
 ```{r}
 #Going to double check that all data sets share the same column names (after removing X).
 map(list(nba_2016, nba_2017, nba_2018, nba_2019, nba_2020, nba_2021), names)
-## They match ##
 
-#Combining all 6 data sets into one larger data set. For safety, I am going to use rbind to accomplish this. That way if I missed something in the investigation, it will return an error.
+#Combining all 6 data sets into one larger data set
 nba_combined <- bind_rows(nba_2016, nba_2017, nba_2018, nba_2019, nba_2020, nba_2021)
 
 ```
 
+## Subsetting Data
+
+### Selecting Key Columns
+```{r}
+#Filtering to keep only observations from 2017 and 2018, only keeping columns having to do with shooting and score
+pbp_condensed <- nba_combined |>
+  filter(year %in% c(2018,2019),
+         !is.na(ShotType) | !is.na(FreeThrowShooter)) |>
+  select(year, Quarter, HomeTeam, AwayTeam, ShotType, ShotOutcome, ShotDist, 
+         FreeThrowShooter, FreeThrowOutcome, FreeThrowNum, HomeScore, AwayScore)
+```
+
+### Assigning Point Values for 3-pointers, 2-pointers, and free throws
+```{r}
+#Assigning points values and placing in a new variable "Points"
+pbp_condensed <- pbp_condensed |>
+  mutate(
+    Points = case_when(
+      ShotOutcome == "make" & str_detect(ShotType, "3") ~ 3,
+      ShotOutcome == "make" & str_detect(ShotType, "2") ~ 2,
+      FreeThrowOutcome == "make" ~ 1,
+      TRUE ~ 0
+    )
+  )
+
+#Checking to verify intended results
+pbp_condensed |> 
+  select(ShotType, ShotOutcome, FreeThrowOutcome, Points) |>
+  head(15)
+```
+
 ## Exploratory Data Analysis
+
