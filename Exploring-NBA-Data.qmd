@@ -8,7 +8,7 @@ editor: visual
 library(tidyverse)
 ```
 
-## Reading NBA Play-by-Play Data (2015-2021)
+## Reading/Managing NBA Play-by-Play Data (2016-2021)
 
 ```{r}
 #Reading in NBA Play-by-Play data sets.
@@ -75,7 +75,7 @@ nba_combined <- bind_rows(nba_2016, nba_2017, nba_2018, nba_2019, nba_2020, nba_
 ```{r}
 #Filtering to keep only observations from 2017 and 2018, only keeping columns having to do with shooting and score
 pbp_condensed <- nba_combined |>
-  filter(year %in% c(2018,2019),
+  filter(year %in% c(2017,2018),
          !is.na(ShotType) | !is.na(FreeThrowShooter)) |>
   select(year, Quarter, HomeTeam, AwayTeam, ShotType, ShotOutcome, ShotDist, 
          FreeThrowShooter, FreeThrowOutcome, FreeThrowNum, HomeScore, AwayScore)
@@ -100,5 +100,65 @@ pbp_condensed |>
   head(15)
 ```
 
+### Saving condensed data set to repo. Needed for the project to be self-contained.
+```{r}
+dir.create("data", showWarnings = FALSE)
+saveRDS(pbp_condensed, "data/nba_scoring_subset_1718.rds")
+```
+
+
 ## Exploratory Data Analysis
 
+### One-Way Contigency Tables
+```{r}
+#Shot Outcomes
+table(pbp_condensed$ShotOutcome)
+
+#Quarter Distribution (5-8 = Overtime)
+table(pbp_condensed$Quarter)
+```
+
+### Two-Way Contigency Tables
+```{r}
+#Shot Outcome x Quarter
+addmargins(table(pbp_condensed$ShotOutcome, pbp_condensed$Quarter, useNA = "no"))
+
+#Home Team x Quarter (The amount of offensive plays run by the Home team per Quarter)
+addmargins(table(pbp_condensed$HomeTeam, pbp_condensed$Quarter))
+
+#Away Team x Quarter (The amount of offensive plays run by the Away team per Quarter)
+addmargins(table(pbp_condensed$AwayTeam, pbp_condensed$Quarter))
+```
+
+### Numerical Summaries
+```{r}
+#Shot Distance by Quarter
+pbp_condensed  |>
+  group_by(Quarter) |>
+  summarise(
+    n = n(),
+    mean_distance = mean(ShotDist, na.rm = TRUE),
+    median_distance = median(ShotDist, na.rm = TRUE),
+    sd_distance = sd(ShotDist, na.rm = TRUE)
+  )
+
+#Points per play by Home Team 
+pbp_condensed  |>
+  group_by(HomeTeam) |>
+  summarise(
+    n = n(),
+    mean_points = mean(Points, na.rm = TRUE),
+    sd_points = sd(Points, na.rm = TRUE)
+  ) |> arrange(desc(mean_points))
+
+#Points per play by Away Team
+pbp_condensed  |>
+  group_by(AwayTeam) |>
+  summarise(
+    n = n(),
+    mean_points = mean(Points, na.rm = TRUE),
+    sd_points = sd(Points, na.rm = TRUE)
+  ) |> arrange(desc(mean_points))
+```
+
+### Plots
