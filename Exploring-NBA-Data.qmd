@@ -58,7 +58,7 @@ nba_2020 <- nba_2020 |> mutate(year = 2020)
 nba_2021 <- nba_2021 |> mutate(year = 2021)
 ```
 
-### Verifying compatability between data sets for a merge & merging the data sets
+### Verifying compatibility between data sets for a merge & merging the data sets
 
 ```{r}
 #Going to double check that all data sets share the same column names (after removing X).
@@ -72,8 +72,9 @@ nba_combined <- bind_rows(nba_2016, nba_2017, nba_2018, nba_2019, nba_2020, nba_
 ## Subsetting Data
 
 ### Selecting Key Columns
+
 ```{r}
-#Filtering to keep only observations from 2017 and 2018, only keeping columns having to do with shooting and score
+#Filtering to keep only observations from 2017 and 2018, only keeping columns having to do with shooting and scoring
 pbp_condensed <- nba_combined |>
   filter(year %in% c(2017,2018),
          !is.na(ShotType) | !is.na(FreeThrowShooter)) |>
@@ -81,7 +82,8 @@ pbp_condensed <- nba_combined |>
          FreeThrowShooter, FreeThrowOutcome, FreeThrowNum, HomeScore, AwayScore)
 ```
 
-### Assigning Point Values for 3-pointers, 2-pointers, and free throws. Re-coding Quarters for better representation.
+### Creating 2 new variables (Points & Quarter Label). Assigning Point Values for 3-pointers, 2-pointers, and free throws. Creating a QuarterLabel variable to only address regulation (most games are playing in regulation and do not need overtime)
+
 ```{r}
 #Assigning points values and placing in a new variable "Points"
 pbp_condensed <- pbp_condensed |>
@@ -94,61 +96,53 @@ pbp_condensed <- pbp_condensed |>
     )
   )
 
-#Re-coding Quarters (Q1-Q4, OT1-OT4)
+#Re-coding Quarters (Q1-Q4, OT1-OT4). Creating a variable 
 pbp_condensed <- pbp_condensed |>
-  mutate(QuarterLabel = case_when(
-    Quarter == 1 ~ "Q1",
-    Quarter == 2 ~ "Q2",
-    Quarter == 3 ~ "Q3",
-    Quarter == 4 ~ "Q4",
-    Quarter == 5 ~ "OT1",
-    Quarter == 6 ~ "OT2",
-    Quarter == 7 ~ "OT3",
-    Quarter == 8 ~ "OT4",
-    TRUE ~ as.character(Quarter))) |>
-      mutate(QuarterLabel = factor(QuarterLabel, levels = c("Q1", "Q2", "Q3", "Q4", "OT1", "OT2", "OT3", "OT4")))
+  filter(Quarter %in% 1:4) |>
+  mutate(QuarterLabel = factor(
+  paste0("Q", Quarter),
+  levels = c("Q1", "Q2", "Q3", "Q4")
+  ))
 
 #Checking to verify intended results
 pbp_condensed |> 
-  select(ShotType, ShotOutcome, FreeThrowOutcome, Points) |>
+  select(Quarter, QuarterLabel, ShotType, ShotOutcome, FreeThrowOutcome, Points) |>
   head(15)
 ```
 
 ### Saving condensed data set to repo. Needed for the project to be self-contained.
+
 ```{r}
 dir.create("data", showWarnings = FALSE)
 saveRDS(pbp_condensed, "data/nba_scoring_subset_1718.rds")
 ```
 
-
 ## Exploratory Data Analysis
 
-### One-Way Contigency Tables
+### Contingency Tables
 ```{r}
 #Shot Outcomes
 table(pbp_condensed$ShotOutcome)
 
-#Quarter Distribution (5-8 = Overtime)
-table(pbp_condensed$Quarter)
-```
+#Quarter Distribution (only regulation)
+table(factor(pbp_condensed$QuarterLabel, levels = c("Q1", "Q2", "Q3", "Q4")))
 
-### Two-Way Contigency Tables
-```{r}
 #Shot Outcome x Quarter
-addmargins(table(pbp_condensed$ShotOutcome, pbp_condensed$Quarter, useNA = "no"))
+addmargins(table(pbp_condensed$ShotOutcome, pbp_condensed$QuarterLabel, useNA = "no"))
 
 #Home Team x Quarter (The amount of offensive plays run by the Home team per Quarter)
-addmargins(table(pbp_condensed$HomeTeam, pbp_condensed$Quarter))
+addmargins(table(pbp_condensed$HomeTeam, pbp_condensed$QuarterLabel))
 
 #Away Team x Quarter (The amount of offensive plays run by the Away team per Quarter)
-addmargins(table(pbp_condensed$AwayTeam, pbp_condensed$Quarter))
+addmargins(table(pbp_condensed$AwayTeam, pbp_condensed$QuarterLabel))
 ```
+*These tables summarize categorical variables such as shot outcomes and quarters. The one-way tables show simple frequency counts (e.g., total made vs. missed shots), while the two-way tables explore relationships across quarters and teams.*
 
 ### Numerical Summaries
 ```{r}
 #Shot Distance by Quarter
 pbp_condensed  |>
-  group_by(Quarter) |>
+  group_by(QuarterLabel) |>
   summarise(
     n = n(),
     mean_distance = mean(ShotDist, na.rm = TRUE),
@@ -156,43 +150,109 @@ pbp_condensed  |>
     sd_distance = sd(ShotDist, na.rm = TRUE)
   )
 
-#Points per play by Home Team 
+#Points per play by Home Team (Top 10 shown for readability)
 pbp_condensed  |>
   group_by(HomeTeam) |>
   summarise(
     n = n(),
     mean_points = mean(Points, na.rm = TRUE),
     sd_points = sd(Points, na.rm = TRUE)
-  ) |> arrange(desc(mean_points))
+  ) |> 
+  slice_max(mean_points, n = 10)
 
-#Points per play by Away Team
+#Points per play by Away Team (Top 10 shown for readability)
 pbp_condensed  |>
   group_by(AwayTeam) |>
   summarise(
     n = n(),
     mean_points = mean(Points, na.rm = TRUE),
     sd_points = sd(Points, na.rm = TRUE)
-  ) |> arrange(desc(mean_points))
+  ) |> 
+  slice_max(mean_points, n = 10)
 ```
+*These numerical summaries describe how shot distance and points per play vary across quarters and home/away teams. *
 
-### Plots
-
-### Outcome Counts Bar Plot
+### Outcome Counts bar-plot
 ```{r}
-#Bar Plot shows makes and misses. NA's dropped (there are plays that did not result in a shot)
+#bar-plot shows makes and misses. NA's dropped (there are plays that did not result in a shot)
 ggplot(filter(pbp_condensed, !is.na(ShotOutcome)), 
        aes(x = ShotOutcome)) + 
   geom_bar(fill = "red") + 
   labs(title = "Shot Outcomes", x = "Outcomes", y = "Count")
 ```
+*The outcome counts bar-plot above shows the distribution of shot outcomes. It can easily be seen that across all shots over the two years chosen, the league shot under 50% from the field.*
 
-### Shot Outcome by Quarter and Season
+### Shot Outcome by Quarter (Faceted by Season) Multivariate bar-plot
 ```{r}
-#Multivariate Bar plot faceted by year
+#Multivariate bar-plot faceted by year
 ggplot(filter(pbp_condensed, !is.na(ShotOutcome)), 
        aes(x = factor(QuarterLabel), fill = ShotOutcome)) +
   geom_bar(position = "fill") +
   facet_wrap(~ year) + 
-  labs(title = "Shot Oucomes by Quarter and Season", x = "Quarter", y = "Proportion")
+  labs(title = "Shot Outcomes by Quarter and Season", x = "Quarter", y = "Proportion")
 ```
+*The bar-plot above shows how shot outcomes differ by quarter and by season. The two years look pretty similar; both show a very slight increase in misses as the game progresses.*
 
+### Shot Distance by Quarter (Colored by Outcome) Boxplot
+```{r}
+#Average shot distance by quarter (not including plays that did not result in a shot attempt)
+ggplot(filter(pbp_condensed, !is.na(ShotOutcome)),
+       aes(x = QuarterLabel, y = ShotDist, color = ShotOutcome)) + 
+  geom_boxplot(outlier.alpha = 0.2) +
+  labs(title = "Shot Distance by Quarter and Outcome", x = "Quarter", y = "Shot Distance (ft)", color = "Outcome")
+```
+*The box-plot above shows the distribution of shot distances across quarters, colored by outcome. It shows subtle differences in where made shots tend to occur during the game.* 
+
+### Average Points by Home Team (Top 10) and by Away Team (Top 10) Grouped bar-plots
+```{r}
+#Computing the Top 10 Home teams (points per play)
+top10_home <- pbp_condensed |>
+  group_by(HomeTeam) |>
+  summarise(overall = mean(Points, na.rm = TRUE), .groups = "drop") |>
+  slice_max(overall, n = 10)
+
+#Computing the Top 10 Away teams (points per play)
+top10_away <- pbp_condensed |>
+  group_by(AwayTeam) |>
+  summarise(overall = mean(Points, na.rm = TRUE), .groups = "drop") |>
+  slice_max(overall, n = 10)
+
+#Top 10 Home Teams in average points per play by Quarter
+pbp_condensed |>
+  filter(HomeTeam %in% top10_home$HomeTeam) |>
+  group_by(HomeTeam, QuarterLabel) |>
+  summarise(mean_points = mean(Points, na.rm = TRUE), .groups = "drop") |>
+  ggplot(aes(x = reorder(HomeTeam, mean_points), y = mean_points, fill = QuarterLabel)) +
+  geom_col(position = "dodge") +
+  coord_flip() +
+  labs(title = "Average Points per Play by Quarter (Top 10 Home Teams)",
+       x = "Home Team", y = "Average Points per Play", fill = "Quarter")
+
+#Top 10 Away Teams in average points per play by Quarter
+pbp_condensed |>
+  filter(AwayTeam %in% top10_away$AwayTeam) |>
+  group_by(AwayTeam, QuarterLabel) |>
+  summarise(mean_points = mean(Points, na.rm = TRUE), .groups = "drop") |>
+  ggplot(aes(x = reorder(AwayTeam, mean_points), y = mean_points, fill = QuarterLabel)) +
+  geom_col(position = "dodge") +
+  coord_flip() +
+  labs(title = "Average Points per Play by Quarter (Top 10 Away Teams)",
+       x = "Away Team", y = "Average Points per Play", fill = "Quarter")
+
+```
+*These grouped bar-plots display the average points per play by quarter for the top 10 scoring teams at home and on the road. The comparison highlights that several teams performed differently depending on location—for example, Sacramento ranked among the top teams in home scoring efficiency but did not appear in the top 10 for away performance.*
+
+### Distribution of Shot Distances by Outcome Density Plot
+```{r}
+ggplot(filter(pbp_condensed, !is.na(ShotOutcome)),
+       aes(x = ShotOutcome, y = ShotDist, fill = ShotOutcome)) +
+  geom_violin(trim = FALSE, alpha = 0.6) +
+  labs(title = "Distribution of Shot Distances by Shot Outcome", x = "Outcome", y = "Shot Distance (ft)") 
+```
+*The violin plot combines the interpretability of a box-plot with a visualization of the full distribution shape. It shows that made shots tend to cluster closer to the basket, while missed shots are more common from three-point range. The overall distribution emphasizes the modern offensive trend of reducing mid-range attempts in favor of high-value three-pointers and close-range finishes.*
+
+**This exploratory data analysis gave a good overview of how scoring and shot selection looked across the 2017–2018 NBA seasons. The tables and summaries helped show overall patterns, while the visuals highlighted that most made shots came from close range or three-point distance, with fewer mid-range attempts. The team comparisons showed clear differences between home and away scoring efficiency. Overall, the analysis sets up a solid foundation for the upcoming app to explore these scoring trends interactively.**
+
+
+
+## Shiny App
