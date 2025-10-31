@@ -6,6 +6,7 @@ editor: visual
 
 ```{r}
 library(tidyverse)
+library(shiny)
 ```
 
 ## Reading/Managing NBA Play-by-Play Data (2016-2021)
@@ -120,6 +121,7 @@ saveRDS(pbp_condensed, "data/nba_scoring_subset_1718.rds")
 ## Exploratory Data Analysis
 
 ### Contingency Tables
+
 ```{r}
 #Shot Outcomes
 table(pbp_condensed$ShotOutcome)
@@ -136,9 +138,11 @@ addmargins(table(pbp_condensed$HomeTeam, pbp_condensed$QuarterLabel))
 #Away Team x Quarter (The amount of offensive plays run by the Away team per Quarter)
 addmargins(table(pbp_condensed$AwayTeam, pbp_condensed$QuarterLabel))
 ```
+
 *These tables summarize categorical variables such as shot outcomes and quarters. The one-way tables show simple frequency counts (e.g., total made vs. missed shots), while the two-way tables explore relationships across quarters and teams.*
 
 ### Numerical Summaries
+
 ```{r}
 #Shot Distance by Quarter
 pbp_condensed  |>
@@ -170,9 +174,11 @@ pbp_condensed  |>
   ) |> 
   slice_max(mean_points, n = 10)
 ```
-*These numerical summaries describe how shot distance and points per play vary across quarters and home/away teams. *
+
+*These numerical summaries describe how shot distance and points per play vary across quarters and home/away teams.*
 
 ### Outcome Counts bar-plot
+
 ```{r}
 #bar-plot shows makes and misses. NA's dropped (there are plays that did not result in a shot)
 ggplot(filter(pbp_condensed, !is.na(ShotOutcome)), 
@@ -180,9 +186,11 @@ ggplot(filter(pbp_condensed, !is.na(ShotOutcome)),
   geom_bar(fill = "red") + 
   labs(title = "Shot Outcomes", x = "Outcomes", y = "Count")
 ```
+
 *The outcome counts bar-plot above shows the distribution of shot outcomes. It can easily be seen that across all shots over the two years chosen, the league shot under 50% from the field.*
 
 ### Shot Outcome by Quarter (Faceted by Season) Multivariate bar-plot
+
 ```{r}
 #Multivariate bar-plot faceted by year
 ggplot(filter(pbp_condensed, !is.na(ShotOutcome)), 
@@ -191,9 +199,11 @@ ggplot(filter(pbp_condensed, !is.na(ShotOutcome)),
   facet_wrap(~ year) + 
   labs(title = "Shot Outcomes by Quarter and Season", x = "Quarter", y = "Proportion")
 ```
+
 *The bar-plot above shows how shot outcomes differ by quarter and by season. The two years look pretty similar; both show a very slight increase in misses as the game progresses.*
 
 ### Shot Distance by Quarter (Colored by Outcome) Boxplot
+
 ```{r}
 #Average shot distance by quarter (not including plays that did not result in a shot attempt)
 ggplot(filter(pbp_condensed, !is.na(ShotOutcome)),
@@ -201,9 +211,11 @@ ggplot(filter(pbp_condensed, !is.na(ShotOutcome)),
   geom_boxplot(outlier.alpha = 0.2) +
   labs(title = "Shot Distance by Quarter and Outcome", x = "Quarter", y = "Shot Distance (ft)", color = "Outcome")
 ```
-*The box-plot above shows the distribution of shot distances across quarters, colored by outcome. It shows subtle differences in where made shots tend to occur during the game.* 
+
+*The box-plot above shows the distribution of shot distances across quarters, colored by outcome. It shows subtle differences in where made shots tend to occur during the game.*
 
 ### Average Points by Home Team (Top 10) and by Away Team (Top 10) Grouped bar-plots
+
 ```{r}
 #Computing the Top 10 Home teams (points per play)
 top10_home <- pbp_condensed |>
@@ -240,19 +252,81 @@ pbp_condensed |>
        x = "Away Team", y = "Average Points per Play", fill = "Quarter")
 
 ```
+
 *These grouped bar-plots display the average points per play by quarter for the top 10 scoring teams at home and on the road. The comparison highlights that several teams performed differently depending on location—for example, Sacramento ranked among the top teams in home scoring efficiency but did not appear in the top 10 for away performance.*
 
 ### Distribution of Shot Distances by Outcome Density Plot
+
 ```{r}
 ggplot(filter(pbp_condensed, !is.na(ShotOutcome)),
        aes(x = ShotOutcome, y = ShotDist, fill = ShotOutcome)) +
   geom_violin(trim = FALSE, alpha = 0.6) +
   labs(title = "Distribution of Shot Distances by Shot Outcome", x = "Outcome", y = "Shot Distance (ft)") 
 ```
-*The violin plot combines the interpretability of a box-plot with a visualization of the full distribution shape. It shows that made shots tend to cluster closer to the basket, while missed shots are more common from three-point range. The overall distribution emphasizes the modern offensive trend of reducing mid-range attempts in favor of high-value three-pointers and close-range finishes.*
 
-**This exploratory data analysis gave a good overview of how scoring and shot selection looked across the 2017–2018 NBA seasons. The tables and summaries helped show overall patterns, while the visuals highlighted that most made shots came from close range or three-point distance, with fewer mid-range attempts. The team comparisons showed clear differences between home and away scoring efficiency. Overall, the analysis sets up a solid foundation for the upcoming app to explore these scoring trends interactively.**
+*The violin plot shows that made shots tend to cluster closer to the basket, while missed shots are more common from three-point range. The overall distribution emphasizes the modern offensive trend of reducing mid-range attempts in favor of high-value three-pointers and close-range finishes.*
 
-
+**The EDA above gave a good overview of how scoring and shot selection looked across the 2017–2018 NBA seasons. The tables and summaries helped show overall patterns, while the visuals highlighted that most made shots came from close range or three-point distance, with fewer mid-range attempts. The team comparisons showed clear differences between home and away scoring efficiency. Overall, the analysis sets up a solid foundation for the upcoming app to explore these scoring trends interactively.**
 
 ## Shiny App
+
+```{r}
+#Defining the UI
+ui <- fluidPage(
+  titlePanel("NBA Play-by-Play Subsetting App"),
+  
+  sidebarLayout(
+    sidebarPanel(
+      h2("Subset the Data"),
+      
+      #Categorical Variables
+      radioButtons(
+        inputId = "quarter_filter",
+        label = "Quarter:",
+        choiceNames = c("All", "1st", "2nd", "3rd", "4th"),
+        choiceValues = c("all", "1st", "2nd", "3rd", "4th")
+      ),
+      radioButtons(
+        inputId = "outcome_filter",
+        label = "Shot Outcome",
+        choiceNames = c("All", "Made", "Missed"),
+        choiceValues = c("all", "make", "miss")
+      ),
+    
+      #Numeric Variables
+      h2("Numeric Variable Filters"),
+      
+      selectInput(
+        inputId = "number1",
+        label = "First numeric variable",
+        choices = c("Shot Distance", "Points", "Home Score", "Away Score"),
+        selected = "ShotDist"
+      ),
+      uiOutput("slider1"),
+      
+      selectInput(
+        inputId = "number2",
+        label = "Second numeric variable:",
+        choices = c("Shot Distance", "Points", "Home Score", "Away Score"),
+        selected = "Points"
+      ),
+      uiOutput("slider2"),
+    
+      br(),
+      actionButton("apply_filters", "Apply Filters", class = "btn-primary")
+    ),
+    mainPanel(
+      h3("Data Output"),
+      plotOutput("plot_output"),
+      tableOutput("subset_table")
+    )
+  )
+)
+  
+  server <- function(input, output){}
+  
+  
+  
+#Running the App
+shinyApp(ui = ui, server = server)
+```
