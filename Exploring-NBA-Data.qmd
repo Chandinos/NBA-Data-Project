@@ -271,6 +271,9 @@ ggplot(filter(pbp_condensed, !is.na(ShotOutcome)),
 ## Shiny App
 
 ```{r}
+#Reloading Data Set for reproducibility
+pbp_condensed <- readRDS("data/nba_scoring_subset_1718.rds")
+
 #Defining the UI
 ui <- fluidPage(
   titlePanel("NBA Play-by-Play Subsetting App"),
@@ -283,8 +286,8 @@ ui <- fluidPage(
       radioButtons(
         inputId = "quarter_filter",
         label = "Quarter:",
-        choiceNames = c("All", "1st", "2nd", "3rd", "4th"),
-        choiceValues = c("all", "1st", "2nd", "3rd", "4th")
+        choiceNames = c("All", "Q1", "Q2", "Q3", "Q4"),
+        choiceValues = c("all", "Q1", "Q2", "Q3", "Q4")
       ),
       radioButtons(
         inputId = "outcome_filter",
@@ -299,7 +302,10 @@ ui <- fluidPage(
       selectInput(
         inputId = "number1",
         label = "First numeric variable",
-        choices = c("Shot Distance", "Points", "Home Score", "Away Score"),
+        choices = c("Shot Distance (ft)"= "ShotDist", 
+                    "Points Scored" = "Points", 
+                    "Home Team Total Points" = "HomeScore", 
+                    "Away Team Total Points" = "AwayScore"),
         selected = "ShotDist"
       ),
       uiOutput("slider1"),
@@ -307,7 +313,10 @@ ui <- fluidPage(
       selectInput(
         inputId = "number2",
         label = "Second numeric variable:",
-        choices = c("Shot Distance", "Points", "Home Score", "Away Score"),
+        choices = c("Shot Distance (ft)"= "ShotDist", 
+                    "Points Scored" = "Points", 
+                    "Home Team Total Points" = "HomeScore", 
+                    "Home Team Total Points" = "AwayScore"),
         selected = "Points"
       ),
       uiOutput("slider2"),
@@ -322,8 +331,28 @@ ui <- fluidPage(
     )
   )
 )
-  
-  server <- function(input, output){}
+
+#Server
+server <- function(input, output, session){
+  output$slider1 <- renderUI({
+    x <- pbp_condensed[[input$number1]]
+    rang <- range(x, na.rm = TRUE)
+    sliderInput("range1", 
+                paste("Range for", input$number1),
+                min = floor(rang[1]), 
+                max = ceiling(rang[2]), 
+                value = rang)
+  })
+  output$slider2 <- renderUI({
+    x <- pbp_condensed[[input$number2]]
+    rang <- range(x, na.rm = TRUE)
+    sliderInput("range2", 
+                paste("Range for", input$number2),
+                min = floor(rang[1]), 
+                max = ceiling(rang[2]), 
+                value = rang)
+  })
+}
   
   
   
