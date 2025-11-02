@@ -364,23 +364,44 @@ server <- function(input, output, session){
     df <- pbp_condensed
     
     if (input$quarter_filter != "all") {
-      df <- filter(df, QuarterLabel == input$quarter_filter)
+      df <- dplyr::filter(df, QuarterLabel == input$quarter_filter)
     }
     if (input$outcome_filter != "all"){
-      df <- filter(df, ShotOutcome == input$outcome_filter)
+      df <- dplyr::filter(df, ShotOutcome == input$outcome_filter)
     }
     
     if (!is.null(input$range1)) {
       v1 <- input$number1
-      df <- df[df[[v1]] >= input$range1[1] & df[[v1]] <= input$range1[2], ]
+      df <- dplyr::filter(
+        df,
+        !is.na(.data[[v1]]),
+        .data[[v1]] >= input$range1[1],
+        .data[[v1]] <= input$range1[2]
+      )
     }
     
     if (!is.null(input$range2)) {
       v2 <- input$number2
-      df <- df[df[[v2]] >= input$range2[1] & df[[v2]] <= input$range2[2], ]
+      df <- dplyr::filter(
+        df,
+        !is.na(.data[[v2]]),
+        .data[[v2]] >= input$range2[1],
+        .data[[v2]] <= input$range2[2]
+      )
     }
     
     rv$data <- df
+  })
+  
+  #Table output from the applied subset
+  output$subset_table <- renderTable({
+    validate(need(nrow(rv$data) >0 , "No rows match the current subset."))
+    colmns <- c("year","QuarterLabel","HomeTeam","AwayTeam","ShotType","ShotOutcome","ShotDist","Points", "HomeScore","AwayScore")
+    
+    rv$data |>
+    dplyr::select(dplyr::all_of(intersect(colmns, names(rv$data)))) |>
+    head(15) |> 
+    dplyr::mutate(year = as.character(year))
   })
 }
   
