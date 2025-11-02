@@ -274,6 +274,7 @@ ggplot(filter(pbp_condensed, !is.na(ShotOutcome)),
 #Loading Library
 library(tidyverse)
 library(shiny)
+library(DT)
 
 #Reloading Data Set for reproducibility
 pbp_condensed <- readRDS("data/nba_scoring_subset_1718.rds")
@@ -302,11 +303,10 @@ ui <- fluidPage(
     
       #Numeric Variables
       h2("Numeric Variable Filters"),
-      
       selectInput(
         inputId = "number1",
         label = "First numeric variable",
-        choices = c("Shot Distance (ft)"= "ShotDist", 
+        choices = c("Shot Distance (ft)" = "ShotDist", 
                     "Points Scored" = "Points", 
                     "Home Team Total Points" = "HomeScore", 
                     "Away Team Total Points" = "AwayScore"),
@@ -317,7 +317,7 @@ ui <- fluidPage(
       selectInput(
         inputId = "number2",
         label = "Second numeric variable:",
-        choices = c("Shot Distance (ft)"= "ShotDist", 
+        choices = c("Shot Distance (ft)" = "ShotDist", 
                     "Points Scored" = "Points", 
                     "Home Team Total Points" = "HomeScore", 
                     "Away Team Total Points" = "AwayScore"),
@@ -328,10 +328,79 @@ ui <- fluidPage(
       br(),
       actionButton("apply_filters", "Apply Filters", class = "btn-primary")
     ),
+    
     mainPanel(
-      h3("Data Output"),
-      plotOutput("plot_output"),
-      tableOutput("subset_table")
+      tabsetPanel(
+        id = "tabs",
+        
+        tabPanel(
+          "About",
+          h3("What does this app do?"),
+          p("Use the sidebar to subset the data (quarters, shot outcomes, and numeric ranges), then click ",
+            strong("Apply Filters"), " to update the app."),
+          h4("Data Source"),
+          p("Play-by-play data from the NBA seasons (2016–2021), condensed to scoring/shot variables from 2017–2018."),
+          tags$ul(
+            tags$li("Sidebar: Choose categorical filters and two numeric range filters."),
+            tags$li("Data Download: View and download the subsetted rows."),
+            tags$li("Data Exploration: Quick categorical and numeric summaries/plots of the subset.")
+          ),
+          br(),
+          tags$img(src = "nba.png")
+        ),
+        
+        tabPanel(
+          "Data Download",
+          h3("Subsetted Data"),
+          DT::dataTableOutput("data_table"),
+          br(),
+          downloadButton("download_csv", "Download subset as CSV")
+        ),
+        
+        tabPanel(
+          "Data Exploration",
+          fluidRow(
+            column(
+              width = 3,
+              h4("Choose summaries"),
+              radioButtons("exp_mode", "Summary Type:",
+                           choices = c("Categorical" = "cat", "Numeric" = "num"),
+                           selected = "cat"),
+              
+              #Categorical Variable Options
+              conditionalPanel(
+                condition = "input.exp_mode == 'cat'",
+                selectInput("exp_cat1", "Categorical Variable 1:",
+                            choices = c("QuarterLabel","ShotOutcome","HomeTeam","AwayTeam","year"),
+                            selected = "QuarterLabel"),
+                selectInput("exp_cat2", "Categorical Variable 2 (optional):",
+                            choices = c("None","ShotOutcome","QuarterLabel","HomeTeam","AwayTeam","year"),
+                            selected = "ShotOutcome")
+              ),
+              
+              #Numeric Variable Options
+              conditionalPanel(
+                condition = "input.exp_mode == 'num'",
+                selectInput("exp_num", "Numeric Variable:",
+                            choices = c("ShotDist","Points","HomeScore","AwayScore"),
+                            selected = "ShotDist"),
+                selectInput("exp_group", "Group by (optional):",
+                            choices = c("None","QuarterLabel","ShotOutcome","HomeTeam","AwayTeam","year"),
+                            selected = "None"),
+                radioButtons("exp_plot_type", "Plot type:",
+                             choices = c("Histogram" = "hist", "Boxplot" = "box"),
+                             selected = "hist")
+              )
+            ),
+            column(
+              width = 8,
+              h4("Summary"),
+              verbatimTextOutput("summary_text"),
+              plotOutput("explore_plot")
+            )
+          )
+        )
+      )
     )
   )
 )
@@ -404,7 +473,8 @@ server <- function(input, output, session){
     dplyr::mutate(year = as.character(year))
   })
 }
-  
+
+
   
   
 #Running the App
