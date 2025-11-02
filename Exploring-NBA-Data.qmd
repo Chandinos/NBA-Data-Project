@@ -271,6 +271,10 @@ ggplot(filter(pbp_condensed, !is.na(ShotOutcome)),
 ## Shiny App
 
 ```{r}
+#Loading Library
+library(tidyverse)
+library(shiny)
+
 #Reloading Data Set for reproducibility
 pbp_condensed <- readRDS("data/nba_scoring_subset_1718.rds")
 
@@ -316,7 +320,7 @@ ui <- fluidPage(
         choices = c("Shot Distance (ft)"= "ShotDist", 
                     "Points Scored" = "Points", 
                     "Home Team Total Points" = "HomeScore", 
-                    "Home Team Total Points" = "AwayScore"),
+                    "Away Team Total Points" = "AwayScore"),
         selected = "Points"
       ),
       uiOutput("slider2"),
@@ -351,6 +355,32 @@ server <- function(input, output, session){
                 min = floor(rang[1]), 
                 max = ceiling(rang[2]), 
                 value = rang)
+  })
+  
+  #Filters Logic
+  rv <- reactiveValues(data = pbp_condensed)
+  
+  observeEvent(input$apply_filters, {
+    df <- pbp_condensed
+    
+    if (input$quarter_filter != "all") {
+      df <- filter(df, QuarterLabel == input$quarter_filter)
+    }
+    if (input$outcome_filter != "all"){
+      df <- filter(df, ShotOutcome == input$outcome_filter)
+    }
+    
+    if (!is.null(input$range1)) {
+      v1 <- input$number1
+      df <- df[df[[v1]] >= input$range1[1] & df[[v1]] <= input$range1[2], ]
+    }
+    
+    if (!is.null(input$range2)) {
+      v2 <- input$number2
+      df <- df[df[[v2]] >= input$range2[1] & df[[v2]] <= input$range2[2], ]
+    }
+    
+    rv$data <- df
   })
 }
   
