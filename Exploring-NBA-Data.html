@@ -1,0 +1,1285 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.7.32">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>NBA Play-by-Play Data Project</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="Exploring-NBA-Data_files/libs/clipboard/clipboard.min.js"></script>
+<script src="Exploring-NBA-Data_files/libs/quarto-html/quarto.js" type="module"></script>
+<script src="Exploring-NBA-Data_files/libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="Exploring-NBA-Data_files/libs/quarto-html/popper.min.js"></script>
+<script src="Exploring-NBA-Data_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="Exploring-NBA-Data_files/libs/quarto-html/anchor.min.js"></script>
+<link href="Exploring-NBA-Data_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="Exploring-NBA-Data_files/libs/quarto-html/quarto-syntax-highlighting-37eea08aefeeee20ff55810ff984fec1.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="Exploring-NBA-Data_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="Exploring-NBA-Data_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="Exploring-NBA-Data_files/libs/bootstrap/bootstrap-bb462d781dde1847d9e3ccf7736099dd.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+
+
+</head>
+
+<body class="fullcontent quarto-light">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">NBA Play-by-Play Data Project</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>── Attaching core tidyverse packages ──────────────────────── tidyverse 2.0.0 ──
+✔ dplyr     1.1.4     ✔ readr     2.1.5
+✔ forcats   1.0.0     ✔ stringr   1.5.1
+✔ ggplot2   3.5.2     ✔ tibble    3.3.0
+✔ lubridate 1.9.4     ✔ tidyr     1.3.1
+✔ purrr     1.0.4     
+── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──
+✖ dplyr::filter() masks stats::filter()
+✖ dplyr::lag()    masks stats::lag()
+ℹ Use the conflicted package (&lt;http://conflicted.r-lib.org/&gt;) to force all conflicts to become errors</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(shiny)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<section id="readingmanaging-nba-play-by-play-data-2016-2021" class="level2">
+<h2 class="anchored" data-anchor-id="readingmanaging-nba-play-by-play-data-2016-2021">Reading/Managing NBA Play-by-Play Data (2016-2021)</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co">#Reading in NBA Play-by-Play data sets.</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>nba_2016 <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"rawdata/csv/NBA_PBP_2015-16.csv"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Rows: 601557 Columns: 40
+── Column specification ────────────────────────────────────────────────────────
+Delimiter: ","
+chr  (34): URL, GameType, Location, Date, WinningTeam, AwayTeam, AwayPlay, H...
+dbl   (5): Quarter, SecLeft, AwayScore, HomeScore, ShotDist
+time  (1): Time
+
+ℹ Use `spec()` to retrieve the full column specification for this data.
+ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>nba_2017 <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"rawdata/csv/NBA_PBP_2016-17.csv"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Rows: 596645 Columns: 40
+── Column specification ────────────────────────────────────────────────────────
+Delimiter: ","
+chr  (34): URL, GameType, Location, Date, WinningTeam, AwayTeam, AwayPlay, H...
+dbl   (5): Quarter, SecLeft, AwayScore, HomeScore, ShotDist
+time  (1): Time
+
+ℹ Use `spec()` to retrieve the full column specification for this data.
+ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>nba_2018 <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"rawdata/csv/NBA_PBP_2017-18.csv"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Rows: 590868 Columns: 40
+── Column specification ────────────────────────────────────────────────────────
+Delimiter: ","
+chr  (34): URL, GameType, Location, Date, WinningTeam, AwayTeam, AwayPlay, H...
+dbl   (5): Quarter, SecLeft, AwayScore, HomeScore, ShotDist
+time  (1): Time
+
+ℹ Use `spec()` to retrieve the full column specification for this data.
+ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>nba_2019 <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"rawdata/csv/NBA_PBP_2018-19.csv"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Rows: 614516 Columns: 40
+── Column specification ────────────────────────────────────────────────────────
+Delimiter: ","
+chr  (34): URL, GameType, Location, Date, WinningTeam, AwayTeam, AwayPlay, H...
+dbl   (5): Quarter, SecLeft, AwayScore, HomeScore, ShotDist
+time  (1): Time
+
+ℹ Use `spec()` to retrieve the full column specification for this data.
+ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>nba_2020 <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"rawdata/csv/NBA_PBP_2019-20.csv"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>New names:
+Rows: 539265 Columns: 41
+── Column specification
+──────────────────────────────────────────────────────── Delimiter: "," chr
+(34): URL, GameType, Location, Date, WinningTeam, AwayTeam, AwayPlay, H... dbl
+(5): Quarter, SecLeft, AwayScore, HomeScore, ShotDist lgl (1): ...41 time (1):
+Time
+ℹ Use `spec()` to retrieve the full column specification for this data. ℹ
+Specify the column types or set `show_col_types = FALSE` to quiet this message.
+• `` -&gt; `...41`</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>nba_2021 <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"rawdata/csv/NBA_PBP_2020-21.csv"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Rows: 97673 Columns: 40
+── Column specification ────────────────────────────────────────────────────────
+Delimiter: ","
+chr  (34): URL, GameType, Location, Date, WinningTeam, AwayTeam, AwayPlay, H...
+dbl   (5): Quarter, SecLeft, AwayScore, HomeScore, ShotDist
+time  (1): Time
+
+ℹ Use `spec()` to retrieve the full column specification for this data.
+ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
+</div>
+</div>
+<section id="inspection-of-the-data-sets-to-see-if-they-are-suitable-to-merge-into-one-larger-data-set." class="level3">
+<h3 class="anchored" data-anchor-id="inspection-of-the-data-sets-to-see-if-they-are-suitable-to-merge-into-one-larger-data-set.">Inspection of the data sets to see if they are suitable to merge into one larger data set.</h3>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="co">#Putting the data sets into a list.</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>nba_list <span class="ot">&lt;-</span> <span class="fu">list</span>(nba_2016, nba_2017, nba_2018, nba_2019, nba_2020, nba_2021)</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a><span class="co">#Getting the union of all column names to see which columns are missing from each dataset.</span></span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>nba_colnames <span class="ot">&lt;-</span> nba_list <span class="sc">|&gt;</span> <span class="fu">map</span>(names) <span class="sc">|&gt;</span> <span class="fu">unlist</span>() <span class="sc">|&gt;</span> <span class="fu">unique</span>() </span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a><span class="co">#Identifying missing columns.</span></span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>nba_missingcols <span class="ot">&lt;-</span> <span class="fu">map</span>(nba_list, <span class="sc">~</span> <span class="fu">setdiff</span>(nba_colnames, <span class="fu">names</span>(.x))) <span class="sc">|&gt;</span> <span class="fu">set_names</span>(<span class="dv">2016</span><span class="sc">:</span><span class="dv">2021</span>)</span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a>nba_missingcols</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>$`2016`
+[1] "...41"
+
+$`2017`
+[1] "...41"
+
+$`2018`
+[1] "...41"
+
+$`2019`
+[1] "...41"
+
+$`2020`
+character(0)
+
+$`2021`
+[1] "...41"</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="do">## nba_2020 has an extra X column ##</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="cleaning-of-any-anomalies-in-the-data." class="level3">
+<h3 class="anchored" data-anchor-id="cleaning-of-any-anomalies-in-the-data.">Cleaning of any anomalies in the data.</h3>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="co">#nba_2020 has an extra column, "X", that the others do not. Going to check if it consists of NA values.</span></span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="fu">all</span>(<span class="fu">is.na</span>(nba_2020<span class="sc">$</span><span class="st">`</span><span class="at">...41</span><span class="st">`</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] TRUE</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="co">#Dropping the column of NA values from the nba_2020 data set.</span></span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>nba_2020 <span class="ot">&lt;-</span> nba_2020 <span class="sc">|&gt;</span> <span class="fu">select</span>(<span class="sc">-</span><span class="st">`</span><span class="at">...41</span><span class="st">`</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="adding-a-year-column-to-every-data-set.-when-merged-together-the-year-column-will-identify-what-data-set-year-the-observation-is-from." class="level3">
+<h3 class="anchored" data-anchor-id="adding-a-year-column-to-every-data-set.-when-merged-together-the-year-column-will-identify-what-data-set-year-the-observation-is-from.">Adding a year column to every data set. When merged together, the year column will identify what data set (year) the observation is from.</h3>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="co">#Adding a year column..</span></span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>nba_2016 <span class="ot">&lt;-</span> nba_2016 <span class="sc">|&gt;</span> <span class="fu">mutate</span>(<span class="at">year =</span> <span class="dv">2016</span>)</span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>nba_2017 <span class="ot">&lt;-</span> nba_2017 <span class="sc">|&gt;</span> <span class="fu">mutate</span>(<span class="at">year =</span> <span class="dv">2017</span>)</span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>nba_2018 <span class="ot">&lt;-</span> nba_2018 <span class="sc">|&gt;</span> <span class="fu">mutate</span>(<span class="at">year =</span> <span class="dv">2018</span>)</span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a>nba_2019 <span class="ot">&lt;-</span> nba_2019 <span class="sc">|&gt;</span> <span class="fu">mutate</span>(<span class="at">year =</span> <span class="dv">2019</span>)</span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a>nba_2020 <span class="ot">&lt;-</span> nba_2020 <span class="sc">|&gt;</span> <span class="fu">mutate</span>(<span class="at">year =</span> <span class="dv">2020</span>)</span>
+<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a>nba_2021 <span class="ot">&lt;-</span> nba_2021 <span class="sc">|&gt;</span> <span class="fu">mutate</span>(<span class="at">year =</span> <span class="dv">2021</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="verifying-compatibility-between-data-sets-for-a-merge-merging-the-data-sets" class="level3">
+<h3 class="anchored" data-anchor-id="verifying-compatibility-between-data-sets-for-a-merge-merging-the-data-sets">Verifying compatibility between data sets for a merge &amp; merging the data sets</h3>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="co">#Going to double check that all data sets share the same column names (after removing X).</span></span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a><span class="fu">map</span>(<span class="fu">list</span>(nba_2016, nba_2017, nba_2018, nba_2019, nba_2020, nba_2021), names)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[[1]]
+ [1] "URL"                "GameType"           "Location"          
+ [4] "Date"               "Time"               "WinningTeam"       
+ [7] "Quarter"            "SecLeft"            "AwayTeam"          
+[10] "AwayPlay"           "AwayScore"          "HomeTeam"          
+[13] "HomePlay"           "HomeScore"          "Shooter"           
+[16] "ShotType"           "ShotOutcome"        "ShotDist"          
+[19] "Assister"           "Blocker"            "FoulType"          
+[22] "Fouler"             "Fouled"             "Rebounder"         
+[25] "ReboundType"        "ViolationPlayer"    "ViolationType"     
+[28] "TimeoutTeam"        "FreeThrowShooter"   "FreeThrowOutcome"  
+[31] "FreeThrowNum"       "EnterGame"          "LeaveGame"         
+[34] "TurnoverPlayer"     "TurnoverType"       "TurnoverCause"     
+[37] "TurnoverCauser"     "JumpballAwayPlayer" "JumpballHomePlayer"
+[40] "JumpballPoss"       "year"              
+
+[[2]]
+ [1] "URL"                "GameType"           "Location"          
+ [4] "Date"               "Time"               "WinningTeam"       
+ [7] "Quarter"            "SecLeft"            "AwayTeam"          
+[10] "AwayPlay"           "AwayScore"          "HomeTeam"          
+[13] "HomePlay"           "HomeScore"          "Shooter"           
+[16] "ShotType"           "ShotOutcome"        "ShotDist"          
+[19] "Assister"           "Blocker"            "FoulType"          
+[22] "Fouler"             "Fouled"             "Rebounder"         
+[25] "ReboundType"        "ViolationPlayer"    "ViolationType"     
+[28] "TimeoutTeam"        "FreeThrowShooter"   "FreeThrowOutcome"  
+[31] "FreeThrowNum"       "EnterGame"          "LeaveGame"         
+[34] "TurnoverPlayer"     "TurnoverType"       "TurnoverCause"     
+[37] "TurnoverCauser"     "JumpballAwayPlayer" "JumpballHomePlayer"
+[40] "JumpballPoss"       "year"              
+
+[[3]]
+ [1] "URL"                "GameType"           "Location"          
+ [4] "Date"               "Time"               "WinningTeam"       
+ [7] "Quarter"            "SecLeft"            "AwayTeam"          
+[10] "AwayPlay"           "AwayScore"          "HomeTeam"          
+[13] "HomePlay"           "HomeScore"          "Shooter"           
+[16] "ShotType"           "ShotOutcome"        "ShotDist"          
+[19] "Assister"           "Blocker"            "FoulType"          
+[22] "Fouler"             "Fouled"             "Rebounder"         
+[25] "ReboundType"        "ViolationPlayer"    "ViolationType"     
+[28] "TimeoutTeam"        "FreeThrowShooter"   "FreeThrowOutcome"  
+[31] "FreeThrowNum"       "EnterGame"          "LeaveGame"         
+[34] "TurnoverPlayer"     "TurnoverType"       "TurnoverCause"     
+[37] "TurnoverCauser"     "JumpballAwayPlayer" "JumpballHomePlayer"
+[40] "JumpballPoss"       "year"              
+
+[[4]]
+ [1] "URL"                "GameType"           "Location"          
+ [4] "Date"               "Time"               "WinningTeam"       
+ [7] "Quarter"            "SecLeft"            "AwayTeam"          
+[10] "AwayPlay"           "AwayScore"          "HomeTeam"          
+[13] "HomePlay"           "HomeScore"          "Shooter"           
+[16] "ShotType"           "ShotOutcome"        "ShotDist"          
+[19] "Assister"           "Blocker"            "FoulType"          
+[22] "Fouler"             "Fouled"             "Rebounder"         
+[25] "ReboundType"        "ViolationPlayer"    "ViolationType"     
+[28] "TimeoutTeam"        "FreeThrowShooter"   "FreeThrowOutcome"  
+[31] "FreeThrowNum"       "EnterGame"          "LeaveGame"         
+[34] "TurnoverPlayer"     "TurnoverType"       "TurnoverCause"     
+[37] "TurnoverCauser"     "JumpballAwayPlayer" "JumpballHomePlayer"
+[40] "JumpballPoss"       "year"              
+
+[[5]]
+ [1] "URL"                "GameType"           "Location"          
+ [4] "Date"               "Time"               "WinningTeam"       
+ [7] "Quarter"            "SecLeft"            "AwayTeam"          
+[10] "AwayPlay"           "AwayScore"          "HomeTeam"          
+[13] "HomePlay"           "HomeScore"          "Shooter"           
+[16] "ShotType"           "ShotOutcome"        "ShotDist"          
+[19] "Assister"           "Blocker"            "FoulType"          
+[22] "Fouler"             "Fouled"             "Rebounder"         
+[25] "ReboundType"        "ViolationPlayer"    "ViolationType"     
+[28] "TimeoutTeam"        "FreeThrowShooter"   "FreeThrowOutcome"  
+[31] "FreeThrowNum"       "EnterGame"          "LeaveGame"         
+[34] "TurnoverPlayer"     "TurnoverType"       "TurnoverCause"     
+[37] "TurnoverCauser"     "JumpballAwayPlayer" "JumpballHomePlayer"
+[40] "JumpballPoss"       "year"              
+
+[[6]]
+ [1] "URL"                "GameType"           "Location"          
+ [4] "Date"               "Time"               "WinningTeam"       
+ [7] "Quarter"            "SecLeft"            "AwayTeam"          
+[10] "AwayPlay"           "AwayScore"          "HomeTeam"          
+[13] "HomePlay"           "HomeScore"          "Shooter"           
+[16] "ShotType"           "ShotOutcome"        "ShotDist"          
+[19] "Assister"           "Blocker"            "FoulType"          
+[22] "Fouler"             "Fouled"             "Rebounder"         
+[25] "ReboundType"        "ViolationPlayer"    "ViolationType"     
+[28] "TimeoutTeam"        "FreeThrowShooter"   "FreeThrowOutcome"  
+[31] "FreeThrowNum"       "EnterGame"          "LeaveGame"         
+[34] "TurnoverPlayer"     "TurnoverType"       "TurnoverCause"     
+[37] "TurnoverCauser"     "JumpballAwayPlayer" "JumpballHomePlayer"
+[40] "JumpballPoss"       "year"              </code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="co">#Combining all 6 data sets into one larger data set</span></span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>nba_combined <span class="ot">&lt;-</span> <span class="fu">bind_rows</span>(nba_2016, nba_2017, nba_2018, nba_2019, nba_2020, nba_2021)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+</section>
+<section id="subsetting-data" class="level2">
+<h2 class="anchored" data-anchor-id="subsetting-data">Subsetting Data</h2>
+<section id="selecting-key-columns" class="level3">
+<h3 class="anchored" data-anchor-id="selecting-key-columns">Selecting Key Columns</h3>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="co">#Filtering to keep only observations from 2017 and 2018, only keeping columns having to do with shooting and scoring</span></span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>pbp_condensed <span class="ot">&lt;-</span> nba_combined <span class="sc">|&gt;</span></span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(year <span class="sc">%in%</span> <span class="fu">c</span>(<span class="dv">2017</span>,<span class="dv">2018</span>),</span>
+<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a>         <span class="sc">!</span><span class="fu">is.na</span>(ShotType) <span class="sc">|</span> <span class="sc">!</span><span class="fu">is.na</span>(FreeThrowShooter)) <span class="sc">|&gt;</span></span>
+<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(year, Quarter, HomeTeam, AwayTeam, ShotType, ShotOutcome, ShotDist, </span>
+<span id="cb26-6"><a href="#cb26-6" aria-hidden="true" tabindex="-1"></a>         FreeThrowShooter, FreeThrowOutcome, FreeThrowNum, HomeScore, AwayScore)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="creating-2-new-variables-points-quarter-label.-assigning-point-values-for-3-pointers-2-pointers-and-free-throws.-creating-a-quarterlabel-variable-to-only-address-regulation-most-games-are-playing-in-regulation-and-do-not-need-overtime" class="level3">
+<h3 class="anchored" data-anchor-id="creating-2-new-variables-points-quarter-label.-assigning-point-values-for-3-pointers-2-pointers-and-free-throws.-creating-a-quarterlabel-variable-to-only-address-regulation-most-games-are-playing-in-regulation-and-do-not-need-overtime">Creating 2 new variables (Points &amp; Quarter Label). Assigning Point Values for 3-pointers, 2-pointers, and free throws. Creating a QuarterLabel variable to only address regulation (most games are playing in regulation and do not need overtime)</h3>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="co">#Assigning points values and placing in a new variable "Points"</span></span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>pbp_condensed <span class="ot">&lt;-</span> pbp_condensed <span class="sc">|&gt;</span></span>
+<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">Points =</span> <span class="fu">case_when</span>(</span>
+<span id="cb27-5"><a href="#cb27-5" aria-hidden="true" tabindex="-1"></a>      ShotOutcome <span class="sc">==</span> <span class="st">"make"</span> <span class="sc">&amp;</span> <span class="fu">str_detect</span>(ShotType, <span class="st">"3"</span>) <span class="sc">~</span> <span class="dv">3</span>,</span>
+<span id="cb27-6"><a href="#cb27-6" aria-hidden="true" tabindex="-1"></a>      ShotOutcome <span class="sc">==</span> <span class="st">"make"</span> <span class="sc">&amp;</span> <span class="fu">str_detect</span>(ShotType, <span class="st">"2"</span>) <span class="sc">~</span> <span class="dv">2</span>,</span>
+<span id="cb27-7"><a href="#cb27-7" aria-hidden="true" tabindex="-1"></a>      FreeThrowOutcome <span class="sc">==</span> <span class="st">"make"</span> <span class="sc">~</span> <span class="dv">1</span>,</span>
+<span id="cb27-8"><a href="#cb27-8" aria-hidden="true" tabindex="-1"></a>      <span class="cn">TRUE</span> <span class="sc">~</span> <span class="dv">0</span></span>
+<span id="cb27-9"><a href="#cb27-9" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb27-10"><a href="#cb27-10" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb27-11"><a href="#cb27-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-12"><a href="#cb27-12" aria-hidden="true" tabindex="-1"></a><span class="co">#Re-coding Quarters (Q1-Q4, OT1-OT4). Creating a variable </span></span>
+<span id="cb27-13"><a href="#cb27-13" aria-hidden="true" tabindex="-1"></a>pbp_condensed <span class="ot">&lt;-</span> pbp_condensed <span class="sc">|&gt;</span></span>
+<span id="cb27-14"><a href="#cb27-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(Quarter <span class="sc">%in%</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">4</span>) <span class="sc">|&gt;</span></span>
+<span id="cb27-15"><a href="#cb27-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">QuarterLabel =</span> <span class="fu">factor</span>(</span>
+<span id="cb27-16"><a href="#cb27-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">paste0</span>(<span class="st">"Q"</span>, Quarter),</span>
+<span id="cb27-17"><a href="#cb27-17" aria-hidden="true" tabindex="-1"></a>  <span class="at">levels =</span> <span class="fu">c</span>(<span class="st">"Q1"</span>, <span class="st">"Q2"</span>, <span class="st">"Q3"</span>, <span class="st">"Q4"</span>)</span>
+<span id="cb27-18"><a href="#cb27-18" aria-hidden="true" tabindex="-1"></a>  ))</span>
+<span id="cb27-19"><a href="#cb27-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-20"><a href="#cb27-20" aria-hidden="true" tabindex="-1"></a><span class="co">#Checking to verify intended results</span></span>
+<span id="cb27-21"><a href="#cb27-21" aria-hidden="true" tabindex="-1"></a>pbp_condensed <span class="sc">|&gt;</span> </span>
+<span id="cb27-22"><a href="#cb27-22" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(Quarter, QuarterLabel, ShotType, ShotOutcome, FreeThrowOutcome, Points) <span class="sc">|&gt;</span></span>
+<span id="cb27-23"><a href="#cb27-23" aria-hidden="true" tabindex="-1"></a>  <span class="fu">head</span>(<span class="dv">15</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 15 × 6
+   Quarter QuarterLabel ShotType       ShotOutcome FreeThrowOutcome Points
+     &lt;dbl&gt; &lt;fct&gt;        &lt;chr&gt;          &lt;chr&gt;       &lt;chr&gt;             &lt;dbl&gt;
+ 1       1 Q1           2-pt layup     make        &lt;NA&gt;                  2
+ 2       1 Q1           2-pt hook shot miss        &lt;NA&gt;                  0
+ 3       1 Q1           2-pt jump shot miss        &lt;NA&gt;                  0
+ 4       1 Q1           2-pt layup     make        &lt;NA&gt;                  2
+ 5       1 Q1           2-pt jump shot make        &lt;NA&gt;                  2
+ 6       1 Q1           3-pt jump shot miss        &lt;NA&gt;                  0
+ 7       1 Q1           2-pt jump shot miss        &lt;NA&gt;                  0
+ 8       1 Q1           3-pt jump shot miss        &lt;NA&gt;                  0
+ 9       1 Q1           2-pt layup     make        &lt;NA&gt;                  2
+10       1 Q1           2-pt jump shot miss        &lt;NA&gt;                  0
+11       1 Q1           &lt;NA&gt;           &lt;NA&gt;        make                  1
+12       1 Q1           &lt;NA&gt;           &lt;NA&gt;        miss                  0
+13       1 Q1           2-pt jump shot miss        &lt;NA&gt;                  0
+14       1 Q1           3-pt jump shot miss        &lt;NA&gt;                  0
+15       1 Q1           2-pt jump shot miss        &lt;NA&gt;                  0</code></pre>
+</div>
+</div>
+</section>
+<section id="saving-condensed-data-set-to-repo.-needed-for-the-project-to-be-self-contained." class="level3">
+<h3 class="anchored" data-anchor-id="saving-condensed-data-set-to-repo.-needed-for-the-project-to-be-self-contained.">Saving condensed data set to repo. Needed for the project to be self-contained.</h3>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="fu">dir.create</span>(<span class="st">"data"</span>, <span class="at">showWarnings =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a><span class="fu">saveRDS</span>(pbp_condensed, <span class="st">"data/nba_scoring_subset_1718.rds"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+</section>
+<section id="exploratory-data-analysis" class="level2">
+<h2 class="anchored" data-anchor-id="exploratory-data-analysis">Exploratory Data Analysis</h2>
+<section id="contingency-tables" class="level3">
+<h3 class="anchored" data-anchor-id="contingency-tables">Contingency Tables</h3>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="co">#Shot Outcomes</span></span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a><span class="fu">table</span>(pbp_condensed<span class="sc">$</span>ShotOutcome)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+  make   miss 
+204775 241246 </code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb32"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="co">#Quarter Distribution (only regulation)</span></span>
+<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a><span class="fu">table</span>(<span class="fu">factor</span>(pbp_condensed<span class="sc">$</span>QuarterLabel, <span class="at">levels =</span> <span class="fu">c</span>(<span class="st">"Q1"</span>, <span class="st">"Q2"</span>, <span class="st">"Q3"</span>, <span class="st">"Q4"</span>)))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    Q1     Q2     Q3     Q4 
+139212 141954 140247 141188 </code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb34"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="co">#Shot Outcome x Quarter</span></span>
+<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a><span class="fu">addmargins</span>(<span class="fu">table</span>(pbp_condensed<span class="sc">$</span>ShotOutcome, pbp_condensed<span class="sc">$</span>QuarterLabel, <span class="at">useNA =</span> <span class="st">"no"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>      
+           Q1     Q2     Q3     Q4    Sum
+  make  54436  52196  50310  47833 204775
+  miss  62318  60345  59953  58630 241246
+  Sum  116754 112541 110263 106463 446021</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb36"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="co">#Home Team x Quarter (The amount of offensive plays run by the Home team per Quarter)</span></span>
+<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a><span class="fu">addmargins</span>(<span class="fu">table</span>(pbp_condensed<span class="sc">$</span>HomeTeam, pbp_condensed<span class="sc">$</span>QuarterLabel))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>     
+          Q1     Q2     Q3     Q4    Sum
+  ATL   4526   4572   4530   4497  18125
+  BOS   5488   5544   5467   5642  22141
+  BRK   4496   4547   4546   4617  18206
+  CHI   4373   4640   4490   4545  18048
+  CHO   4385   4487   4380   4463  17715
+  CLE   5352   5556   5294   5353  21555
+  DAL   4190   4300   4150   4284  16924
+  DEN   4318   4555   4444   4509  17826
+  DET   4264   4332   4364   4359  17319
+  GSW   5591   5539   5625   5374  22129
+  HOU   5372   5447   5377   5352  21548
+  IND   4523   4595   4625   4611  18354
+  LAC   4579   4746   4686   4747  18758
+  LAL   4443   4526   4457   4506  17932
+  MEM   4385   4590   4449   4506  17930
+  MIA   4413   4459   4354   4516  17742
+  MIL   4591   4603   4623   4676  18493
+  MIN   4402   4501   4466   4491  17860
+  NOP   4748   4676   4658   4718  18800
+  NYK   4374   4477   4363   4489  17703
+  OKC   4657   4779   4826   4752  19014
+  ORL   4453   4350   4482   4400  17685
+  PHI   4713   4832   4783   4790  19118
+  PHO   4615   4711   4693   4612  18631
+  POR   4658   4659   4602   4618  18537
+  SAC   4246   4363   4191   4244  17044
+  SAS   4688   4915   4766   4700  19069
+  TOR   4915   4990   5046   4982  19933
+  UTA   4675   4710   4675   4859  18919
+  WAS   4779   4953   4835   4976  19543
+  Sum 139212 141954 140247 141188 562601</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb38"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a><span class="co">#Away Team x Quarter (The amount of offensive plays run by the Away team per Quarter)</span></span>
+<span id="cb38-2"><a href="#cb38-2" aria-hidden="true" tabindex="-1"></a><span class="fu">addmargins</span>(<span class="fu">table</span>(pbp_condensed<span class="sc">$</span>AwayTeam, pbp_condensed<span class="sc">$</span>QuarterLabel))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>     
+          Q1     Q2     Q3     Q4    Sum
+  ATL   4367   4446   4715   4697  18225
+  BOS   4944   5098   5325   5380  20747
+  BRK   4352   4406   4720   4789  18267
+  CHI   4417   4552   4549   4665  18183
+  CHO   4353   4423   4391   4416  17583
+  CLE   5637   5675   5401   5415  22128
+  DAL   4110   4270   4092   4144  16616
+  DEN   4461   4629   4378   4383  17851
+  DET   4320   4355   4183   4302  17160
+  GSW   5674   5557   5542   5334  22107
+  HOU   5077   5209   5007   5007  20300
+  IND   4618   4701   4535   4671  18525
+  LAC   4648   4799   4545   4566  18558
+  LAL   4645   4604   4483   4489  18221
+  MEM   4338   4589   4335   4492  17754
+  MIA   4574   4588   4435   4465  18062
+  MIL   4664   4750   4553   4677  18644
+  MIN   4540   4659   4461   4582  18242
+  NOP   4806   4758   4661   4604  18829
+  NYK   4508   4513   4396   4437  17854
+  OKC   4795   4986   4774   4725  19280
+  ORL   4402   4485   4341   4358  17586
+  PHI   4774   4817   4725   4795  19111
+  PHO   4364   4523   4869   4694  18450
+  POR   4631   4629   4780   4816  18856
+  SAC   4136   4394   4256   4305  17091
+  SAS   4719   4722   5078   5053  19572
+  TOR   4754   5010   4943   4896  19603
+  UTA   4654   4746   4956   5025  19381
+  WAS   4930   5061   4818   5006  19815
+  Sum 139212 141954 140247 141188 562601</code></pre>
+</div>
+</div>
+<p><em>These tables summarize categorical variables such as shot outcomes and quarters. The one-way tables show simple frequency counts (e.g., total made vs.&nbsp;missed shots), while the two-way tables explore relationships across quarters and teams.</em></p>
+</section>
+<section id="numerical-summaries" class="level3">
+<h3 class="anchored" data-anchor-id="numerical-summaries">Numerical Summaries</h3>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb40"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a><span class="co">#Shot Distance by Quarter</span></span>
+<span id="cb40-2"><a href="#cb40-2" aria-hidden="true" tabindex="-1"></a>pbp_condensed  <span class="sc">|&gt;</span></span>
+<span id="cb40-3"><a href="#cb40-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(QuarterLabel) <span class="sc">|&gt;</span></span>
+<span id="cb40-4"><a href="#cb40-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(</span>
+<span id="cb40-5"><a href="#cb40-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">n =</span> <span class="fu">n</span>(),</span>
+<span id="cb40-6"><a href="#cb40-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">mean_distance =</span> <span class="fu">mean</span>(ShotDist, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb40-7"><a href="#cb40-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">median_distance =</span> <span class="fu">median</span>(ShotDist, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb40-8"><a href="#cb40-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">sd_distance =</span> <span class="fu">sd</span>(ShotDist, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb40-9"><a href="#cb40-9" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 4 × 5
+  QuarterLabel      n mean_distance median_distance sd_distance
+  &lt;fct&gt;         &lt;int&gt;         &lt;dbl&gt;           &lt;dbl&gt;       &lt;dbl&gt;
+1 Q1           139212          13.1              13        10.2
+2 Q2           141954          13.0              13        10.4
+3 Q3           140247          13.4              14        10.4
+4 Q4           141188          13.5              14        10.3</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb42"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a><span class="co">#Points per play by Home Team (Top 10 shown for readability)</span></span>
+<span id="cb42-2"><a href="#cb42-2" aria-hidden="true" tabindex="-1"></a>pbp_condensed  <span class="sc">|&gt;</span></span>
+<span id="cb42-3"><a href="#cb42-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(HomeTeam) <span class="sc">|&gt;</span></span>
+<span id="cb42-4"><a href="#cb42-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(</span>
+<span id="cb42-5"><a href="#cb42-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">n =</span> <span class="fu">n</span>(),</span>
+<span id="cb42-6"><a href="#cb42-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">mean_points =</span> <span class="fu">mean</span>(Points, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb42-7"><a href="#cb42-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">sd_points =</span> <span class="fu">sd</span>(Points, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb42-8"><a href="#cb42-8" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span> </span>
+<span id="cb42-9"><a href="#cb42-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">slice_max</span>(mean_points, <span class="at">n =</span> <span class="dv">10</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 10 × 4
+   HomeTeam     n mean_points sd_points
+   &lt;chr&gt;    &lt;int&gt;       &lt;dbl&gt;     &lt;dbl&gt;
+ 1 CLE      21555       1.02       1.08
+ 2 DEN      17826       1.01       1.07
+ 3 GSW      22129       1.01       1.07
+ 4 SAC      17044       1          1.07
+ 5 MIN      17860       0.999      1.05
+ 6 NOP      18800       0.998      1.06
+ 7 HOU      21548       0.998      1.08
+ 8 MIL      18493       0.992      1.04
+ 9 WAS      19543       0.992      1.05
+10 ATL      18125       0.989      1.07</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb44"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a><span class="co">#Points per play by Away Team (Top 10 shown for readability)</span></span>
+<span id="cb44-2"><a href="#cb44-2" aria-hidden="true" tabindex="-1"></a>pbp_condensed  <span class="sc">|&gt;</span></span>
+<span id="cb44-3"><a href="#cb44-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(AwayTeam) <span class="sc">|&gt;</span></span>
+<span id="cb44-4"><a href="#cb44-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(</span>
+<span id="cb44-5"><a href="#cb44-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">n =</span> <span class="fu">n</span>(),</span>
+<span id="cb44-6"><a href="#cb44-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">mean_points =</span> <span class="fu">mean</span>(Points, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb44-7"><a href="#cb44-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">sd_points =</span> <span class="fu">sd</span>(Points, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb44-8"><a href="#cb44-8" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span> </span>
+<span id="cb44-9"><a href="#cb44-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">slice_max</span>(mean_points, <span class="at">n =</span> <span class="dv">10</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 10 × 4
+   AwayTeam     n mean_points sd_points
+   &lt;chr&gt;    &lt;int&gt;       &lt;dbl&gt;     &lt;dbl&gt;
+ 1 CLE      22128       1.01       1.08
+ 2 DEN      17851       1.01       1.07
+ 3 HOU      20300       1.00       1.09
+ 4 DAL      16616       1.00       1.08
+ 5 MIN      18242       0.994      1.04
+ 6 GSW      22107       0.992      1.06
+ 7 IND      18525       0.992      1.05
+ 8 MIL      18644       0.991      1.05
+ 9 WAS      19815       0.989      1.05
+10 ORL      17586       0.988      1.06</code></pre>
+</div>
+</div>
+<p><em>These numerical summaries describe how shot distance and points per play vary across quarters and home/away teams.</em></p>
+</section>
+<section id="outcome-counts-bar-plot" class="level3">
+<h3 class="anchored" data-anchor-id="outcome-counts-bar-plot">Outcome Counts bar-plot</h3>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb46"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a><span class="co">#bar-plot shows makes and misses. NA's dropped (there are plays that did not result in a shot)</span></span>
+<span id="cb46-2"><a href="#cb46-2" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(<span class="fu">filter</span>(pbp_condensed, <span class="sc">!</span><span class="fu">is.na</span>(ShotOutcome)), </span>
+<span id="cb46-3"><a href="#cb46-3" aria-hidden="true" tabindex="-1"></a>       <span class="fu">aes</span>(<span class="at">x =</span> ShotOutcome)) <span class="sc">+</span> </span>
+<span id="cb46-4"><a href="#cb46-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_bar</span>(<span class="at">fill =</span> <span class="st">"red"</span>) <span class="sc">+</span> </span>
+<span id="cb46-5"><a href="#cb46-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Shot Outcomes"</span>, <span class="at">x =</span> <span class="st">"Outcomes"</span>, <span class="at">y =</span> <span class="st">"Count"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Exploring-NBA-Data_files/figure-html/unnamed-chunk-12-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p><em>The outcome counts bar-plot above shows the distribution of shot outcomes. It can easily be seen that across all shots over the two years chosen, the league shot under 50% from the field.</em></p>
+</section>
+<section id="shot-outcome-by-quarter-faceted-by-season-multivariate-bar-plot" class="level3">
+<h3 class="anchored" data-anchor-id="shot-outcome-by-quarter-faceted-by-season-multivariate-bar-plot">Shot Outcome by Quarter (Faceted by Season) Multivariate bar-plot</h3>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb47"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a><span class="co">#Multivariate bar-plot faceted by year</span></span>
+<span id="cb47-2"><a href="#cb47-2" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(<span class="fu">filter</span>(pbp_condensed, <span class="sc">!</span><span class="fu">is.na</span>(ShotOutcome)), </span>
+<span id="cb47-3"><a href="#cb47-3" aria-hidden="true" tabindex="-1"></a>       <span class="fu">aes</span>(<span class="at">x =</span> <span class="fu">factor</span>(QuarterLabel), <span class="at">fill =</span> ShotOutcome)) <span class="sc">+</span></span>
+<span id="cb47-4"><a href="#cb47-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_bar</span>(<span class="at">position =</span> <span class="st">"fill"</span>) <span class="sc">+</span></span>
+<span id="cb47-5"><a href="#cb47-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span> year) <span class="sc">+</span> </span>
+<span id="cb47-6"><a href="#cb47-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Shot Outcomes by Quarter and Season"</span>, <span class="at">x =</span> <span class="st">"Quarter"</span>, <span class="at">y =</span> <span class="st">"Proportion"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Exploring-NBA-Data_files/figure-html/unnamed-chunk-13-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p><em>The bar-plot above shows how shot outcomes differ by quarter and by season. The two years look pretty similar; both show a very slight increase in misses as the game progresses.</em></p>
+</section>
+<section id="shot-distance-by-quarter-colored-by-outcome-boxplot" class="level3">
+<h3 class="anchored" data-anchor-id="shot-distance-by-quarter-colored-by-outcome-boxplot">Shot Distance by Quarter (Colored by Outcome) Boxplot</h3>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb48"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a><span class="co">#Average shot distance by quarter (not including plays that did not result in a shot attempt)</span></span>
+<span id="cb48-2"><a href="#cb48-2" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(<span class="fu">filter</span>(pbp_condensed, <span class="sc">!</span><span class="fu">is.na</span>(ShotOutcome)),</span>
+<span id="cb48-3"><a href="#cb48-3" aria-hidden="true" tabindex="-1"></a>       <span class="fu">aes</span>(<span class="at">x =</span> QuarterLabel, <span class="at">y =</span> ShotDist, <span class="at">color =</span> ShotOutcome)) <span class="sc">+</span> </span>
+<span id="cb48-4"><a href="#cb48-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_boxplot</span>(<span class="at">outlier.alpha =</span> <span class="fl">0.2</span>) <span class="sc">+</span></span>
+<span id="cb48-5"><a href="#cb48-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Shot Distance by Quarter and Outcome"</span>, <span class="at">x =</span> <span class="st">"Quarter"</span>, <span class="at">y =</span> <span class="st">"Shot Distance (ft)"</span>, <span class="at">color =</span> <span class="st">"Outcome"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Exploring-NBA-Data_files/figure-html/unnamed-chunk-14-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p><em>The box-plot above shows the distribution of shot distances across quarters, colored by outcome. It shows subtle differences in where made shots tend to occur during the game.</em></p>
+</section>
+<section id="average-points-by-home-team-top-10-and-by-away-team-top-10-grouped-bar-plots" class="level3">
+<h3 class="anchored" data-anchor-id="average-points-by-home-team-top-10-and-by-away-team-top-10-grouped-bar-plots">Average Points by Home Team (Top 10) and by Away Team (Top 10) Grouped bar-plots</h3>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb49"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb49-1"><a href="#cb49-1" aria-hidden="true" tabindex="-1"></a><span class="co">#Computing the Top 10 Home teams (points per play)</span></span>
+<span id="cb49-2"><a href="#cb49-2" aria-hidden="true" tabindex="-1"></a>top10_home <span class="ot">&lt;-</span> pbp_condensed <span class="sc">|&gt;</span></span>
+<span id="cb49-3"><a href="#cb49-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(HomeTeam) <span class="sc">|&gt;</span></span>
+<span id="cb49-4"><a href="#cb49-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">overall =</span> <span class="fu">mean</span>(Points, <span class="at">na.rm =</span> <span class="cn">TRUE</span>), <span class="at">.groups =</span> <span class="st">"drop"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb49-5"><a href="#cb49-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">slice_max</span>(overall, <span class="at">n =</span> <span class="dv">10</span>)</span>
+<span id="cb49-6"><a href="#cb49-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb49-7"><a href="#cb49-7" aria-hidden="true" tabindex="-1"></a><span class="co">#Computing the Top 10 Away teams (points per play)</span></span>
+<span id="cb49-8"><a href="#cb49-8" aria-hidden="true" tabindex="-1"></a>top10_away <span class="ot">&lt;-</span> pbp_condensed <span class="sc">|&gt;</span></span>
+<span id="cb49-9"><a href="#cb49-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(AwayTeam) <span class="sc">|&gt;</span></span>
+<span id="cb49-10"><a href="#cb49-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">overall =</span> <span class="fu">mean</span>(Points, <span class="at">na.rm =</span> <span class="cn">TRUE</span>), <span class="at">.groups =</span> <span class="st">"drop"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb49-11"><a href="#cb49-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">slice_max</span>(overall, <span class="at">n =</span> <span class="dv">10</span>)</span>
+<span id="cb49-12"><a href="#cb49-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb49-13"><a href="#cb49-13" aria-hidden="true" tabindex="-1"></a><span class="co">#Top 10 Home Teams in average points per play by Quarter</span></span>
+<span id="cb49-14"><a href="#cb49-14" aria-hidden="true" tabindex="-1"></a>pbp_condensed <span class="sc">|&gt;</span></span>
+<span id="cb49-15"><a href="#cb49-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(HomeTeam <span class="sc">%in%</span> top10_home<span class="sc">$</span>HomeTeam) <span class="sc">|&gt;</span></span>
+<span id="cb49-16"><a href="#cb49-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(HomeTeam, QuarterLabel) <span class="sc">|&gt;</span></span>
+<span id="cb49-17"><a href="#cb49-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">mean_points =</span> <span class="fu">mean</span>(Points, <span class="at">na.rm =</span> <span class="cn">TRUE</span>), <span class="at">.groups =</span> <span class="st">"drop"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb49-18"><a href="#cb49-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> <span class="fu">reorder</span>(HomeTeam, mean_points), <span class="at">y =</span> mean_points, <span class="at">fill =</span> QuarterLabel)) <span class="sc">+</span></span>
+<span id="cb49-19"><a href="#cb49-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_col</span>(<span class="at">position =</span> <span class="st">"dodge"</span>) <span class="sc">+</span></span>
+<span id="cb49-20"><a href="#cb49-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">coord_flip</span>() <span class="sc">+</span></span>
+<span id="cb49-21"><a href="#cb49-21" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Average Points per Play by Quarter (Top 10 Home Teams)"</span>,</span>
+<span id="cb49-22"><a href="#cb49-22" aria-hidden="true" tabindex="-1"></a>       <span class="at">x =</span> <span class="st">"Home Team"</span>, <span class="at">y =</span> <span class="st">"Average Points per Play"</span>, <span class="at">fill =</span> <span class="st">"Quarter"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Exploring-NBA-Data_files/figure-html/unnamed-chunk-15-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="sourceCode cell-code" id="cb50"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb50-1"><a href="#cb50-1" aria-hidden="true" tabindex="-1"></a><span class="co">#Top 10 Away Teams in average points per play by Quarter</span></span>
+<span id="cb50-2"><a href="#cb50-2" aria-hidden="true" tabindex="-1"></a>pbp_condensed <span class="sc">|&gt;</span></span>
+<span id="cb50-3"><a href="#cb50-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(AwayTeam <span class="sc">%in%</span> top10_away<span class="sc">$</span>AwayTeam) <span class="sc">|&gt;</span></span>
+<span id="cb50-4"><a href="#cb50-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(AwayTeam, QuarterLabel) <span class="sc">|&gt;</span></span>
+<span id="cb50-5"><a href="#cb50-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">mean_points =</span> <span class="fu">mean</span>(Points, <span class="at">na.rm =</span> <span class="cn">TRUE</span>), <span class="at">.groups =</span> <span class="st">"drop"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb50-6"><a href="#cb50-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> <span class="fu">reorder</span>(AwayTeam, mean_points), <span class="at">y =</span> mean_points, <span class="at">fill =</span> QuarterLabel)) <span class="sc">+</span></span>
+<span id="cb50-7"><a href="#cb50-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_col</span>(<span class="at">position =</span> <span class="st">"dodge"</span>) <span class="sc">+</span></span>
+<span id="cb50-8"><a href="#cb50-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">coord_flip</span>() <span class="sc">+</span></span>
+<span id="cb50-9"><a href="#cb50-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Average Points per Play by Quarter (Top 10 Away Teams)"</span>,</span>
+<span id="cb50-10"><a href="#cb50-10" aria-hidden="true" tabindex="-1"></a>       <span class="at">x =</span> <span class="st">"Away Team"</span>, <span class="at">y =</span> <span class="st">"Average Points per Play"</span>, <span class="at">fill =</span> <span class="st">"Quarter"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Exploring-NBA-Data_files/figure-html/unnamed-chunk-15-2.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p><em>These grouped bar-plots display the average points per play by quarter for the top 10 scoring teams at home and on the road. The comparison highlights that several teams performed differently depending on location—for example, Sacramento ranked among the top teams in home scoring efficiency but did not appear in the top 10 for away performance.</em></p>
+</section>
+<section id="distribution-of-shot-distances-by-outcome-density-plot" class="level3">
+<h3 class="anchored" data-anchor-id="distribution-of-shot-distances-by-outcome-density-plot">Distribution of Shot Distances by Outcome Density Plot</h3>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb51"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb51-1"><a href="#cb51-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(<span class="fu">filter</span>(pbp_condensed, <span class="sc">!</span><span class="fu">is.na</span>(ShotOutcome)),</span>
+<span id="cb51-2"><a href="#cb51-2" aria-hidden="true" tabindex="-1"></a>       <span class="fu">aes</span>(<span class="at">x =</span> ShotOutcome, <span class="at">y =</span> ShotDist, <span class="at">fill =</span> ShotOutcome)) <span class="sc">+</span></span>
+<span id="cb51-3"><a href="#cb51-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_violin</span>(<span class="at">trim =</span> <span class="cn">FALSE</span>, <span class="at">alpha =</span> <span class="fl">0.6</span>) <span class="sc">+</span></span>
+<span id="cb51-4"><a href="#cb51-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Distribution of Shot Distances by Shot Outcome"</span>, <span class="at">x =</span> <span class="st">"Outcome"</span>, <span class="at">y =</span> <span class="st">"Shot Distance (ft)"</span>) </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Exploring-NBA-Data_files/figure-html/unnamed-chunk-16-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p><em>The violin plot shows that made shots tend to cluster closer to the basket, while missed shots are more common from three-point range. The overall distribution emphasizes the modern offensive trend of reducing mid-range attempts in favor of high-value three-pointers and close-range finishes.</em></p>
+<p><strong>The EDA above gave a good overview of how scoring and shot selection looked across the 2017–2018 NBA seasons. The tables and summaries helped show overall patterns, while the visuals highlighted that most made shots came from close range or three-point distance, with fewer mid-range attempts. The team comparisons showed clear differences between home and away scoring efficiency. Overall, the analysis sets up a solid foundation for the upcoming app to explore these scoring trends interactively.</strong></p>
+</section>
+</section>
+<section id="shiny-app" class="level2">
+<h2 class="anchored" data-anchor-id="shiny-app">Shiny App</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb52"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb52-1"><a href="#cb52-1" aria-hidden="true" tabindex="-1"></a><span class="co">#Loading Library</span></span>
+<span id="cb52-2"><a href="#cb52-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span>
+<span id="cb52-3"><a href="#cb52-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(shiny)</span>
+<span id="cb52-4"><a href="#cb52-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb52-5"><a href="#cb52-5" aria-hidden="true" tabindex="-1"></a><span class="co">#Reloading Data Set for reproducibility</span></span>
+<span id="cb52-6"><a href="#cb52-6" aria-hidden="true" tabindex="-1"></a>pbp_condensed <span class="ot">&lt;-</span> <span class="fu">readRDS</span>(<span class="st">"data/nba_scoring_subset_1718.rds"</span>)</span>
+<span id="cb52-7"><a href="#cb52-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb52-8"><a href="#cb52-8" aria-hidden="true" tabindex="-1"></a><span class="co">#Defining the UI</span></span>
+<span id="cb52-9"><a href="#cb52-9" aria-hidden="true" tabindex="-1"></a>ui <span class="ot">&lt;-</span> <span class="fu">fluidPage</span>(</span>
+<span id="cb52-10"><a href="#cb52-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">titlePanel</span>(<span class="st">"NBA Play-by-Play Subsetting App"</span>),</span>
+<span id="cb52-11"><a href="#cb52-11" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb52-12"><a href="#cb52-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">sidebarLayout</span>(</span>
+<span id="cb52-13"><a href="#cb52-13" aria-hidden="true" tabindex="-1"></a>    <span class="fu">sidebarPanel</span>(</span>
+<span id="cb52-14"><a href="#cb52-14" aria-hidden="true" tabindex="-1"></a>      <span class="fu">h2</span>(<span class="st">"Subset the Data"</span>),</span>
+<span id="cb52-15"><a href="#cb52-15" aria-hidden="true" tabindex="-1"></a>      </span>
+<span id="cb52-16"><a href="#cb52-16" aria-hidden="true" tabindex="-1"></a>      <span class="co">#Categorical Variables</span></span>
+<span id="cb52-17"><a href="#cb52-17" aria-hidden="true" tabindex="-1"></a>      <span class="fu">radioButtons</span>(</span>
+<span id="cb52-18"><a href="#cb52-18" aria-hidden="true" tabindex="-1"></a>        <span class="at">inputId =</span> <span class="st">"quarter_filter"</span>,</span>
+<span id="cb52-19"><a href="#cb52-19" aria-hidden="true" tabindex="-1"></a>        <span class="at">label =</span> <span class="st">"Quarter:"</span>,</span>
+<span id="cb52-20"><a href="#cb52-20" aria-hidden="true" tabindex="-1"></a>        <span class="at">choiceNames =</span> <span class="fu">c</span>(<span class="st">"All"</span>, <span class="st">"Q1"</span>, <span class="st">"Q2"</span>, <span class="st">"Q3"</span>, <span class="st">"Q4"</span>),</span>
+<span id="cb52-21"><a href="#cb52-21" aria-hidden="true" tabindex="-1"></a>        <span class="at">choiceValues =</span> <span class="fu">c</span>(<span class="st">"all"</span>, <span class="st">"Q1"</span>, <span class="st">"Q2"</span>, <span class="st">"Q3"</span>, <span class="st">"Q4"</span>)</span>
+<span id="cb52-22"><a href="#cb52-22" aria-hidden="true" tabindex="-1"></a>      ),</span>
+<span id="cb52-23"><a href="#cb52-23" aria-hidden="true" tabindex="-1"></a>      <span class="fu">radioButtons</span>(</span>
+<span id="cb52-24"><a href="#cb52-24" aria-hidden="true" tabindex="-1"></a>        <span class="at">inputId =</span> <span class="st">"outcome_filter"</span>,</span>
+<span id="cb52-25"><a href="#cb52-25" aria-hidden="true" tabindex="-1"></a>        <span class="at">label =</span> <span class="st">"Shot Outcome"</span>,</span>
+<span id="cb52-26"><a href="#cb52-26" aria-hidden="true" tabindex="-1"></a>        <span class="at">choiceNames =</span> <span class="fu">c</span>(<span class="st">"All"</span>, <span class="st">"Made"</span>, <span class="st">"Missed"</span>),</span>
+<span id="cb52-27"><a href="#cb52-27" aria-hidden="true" tabindex="-1"></a>        <span class="at">choiceValues =</span> <span class="fu">c</span>(<span class="st">"all"</span>, <span class="st">"make"</span>, <span class="st">"miss"</span>)</span>
+<span id="cb52-28"><a href="#cb52-28" aria-hidden="true" tabindex="-1"></a>      ),</span>
+<span id="cb52-29"><a href="#cb52-29" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb52-30"><a href="#cb52-30" aria-hidden="true" tabindex="-1"></a>      <span class="co">#Numeric Variables</span></span>
+<span id="cb52-31"><a href="#cb52-31" aria-hidden="true" tabindex="-1"></a>      <span class="fu">h2</span>(<span class="st">"Numeric Variable Filters"</span>),</span>
+<span id="cb52-32"><a href="#cb52-32" aria-hidden="true" tabindex="-1"></a>      </span>
+<span id="cb52-33"><a href="#cb52-33" aria-hidden="true" tabindex="-1"></a>      <span class="fu">selectInput</span>(</span>
+<span id="cb52-34"><a href="#cb52-34" aria-hidden="true" tabindex="-1"></a>        <span class="at">inputId =</span> <span class="st">"number1"</span>,</span>
+<span id="cb52-35"><a href="#cb52-35" aria-hidden="true" tabindex="-1"></a>        <span class="at">label =</span> <span class="st">"First numeric variable"</span>,</span>
+<span id="cb52-36"><a href="#cb52-36" aria-hidden="true" tabindex="-1"></a>        <span class="at">choices =</span> <span class="fu">c</span>(<span class="st">"Shot Distance (ft)"</span><span class="ot">=</span> <span class="st">"ShotDist"</span>, </span>
+<span id="cb52-37"><a href="#cb52-37" aria-hidden="true" tabindex="-1"></a>                    <span class="st">"Points Scored"</span> <span class="ot">=</span> <span class="st">"Points"</span>, </span>
+<span id="cb52-38"><a href="#cb52-38" aria-hidden="true" tabindex="-1"></a>                    <span class="st">"Home Team Total Points"</span> <span class="ot">=</span> <span class="st">"HomeScore"</span>, </span>
+<span id="cb52-39"><a href="#cb52-39" aria-hidden="true" tabindex="-1"></a>                    <span class="st">"Away Team Total Points"</span> <span class="ot">=</span> <span class="st">"AwayScore"</span>),</span>
+<span id="cb52-40"><a href="#cb52-40" aria-hidden="true" tabindex="-1"></a>        <span class="at">selected =</span> <span class="st">"ShotDist"</span></span>
+<span id="cb52-41"><a href="#cb52-41" aria-hidden="true" tabindex="-1"></a>      ),</span>
+<span id="cb52-42"><a href="#cb52-42" aria-hidden="true" tabindex="-1"></a>      <span class="fu">uiOutput</span>(<span class="st">"slider1"</span>),</span>
+<span id="cb52-43"><a href="#cb52-43" aria-hidden="true" tabindex="-1"></a>      </span>
+<span id="cb52-44"><a href="#cb52-44" aria-hidden="true" tabindex="-1"></a>      <span class="fu">selectInput</span>(</span>
+<span id="cb52-45"><a href="#cb52-45" aria-hidden="true" tabindex="-1"></a>        <span class="at">inputId =</span> <span class="st">"number2"</span>,</span>
+<span id="cb52-46"><a href="#cb52-46" aria-hidden="true" tabindex="-1"></a>        <span class="at">label =</span> <span class="st">"Second numeric variable:"</span>,</span>
+<span id="cb52-47"><a href="#cb52-47" aria-hidden="true" tabindex="-1"></a>        <span class="at">choices =</span> <span class="fu">c</span>(<span class="st">"Shot Distance (ft)"</span><span class="ot">=</span> <span class="st">"ShotDist"</span>, </span>
+<span id="cb52-48"><a href="#cb52-48" aria-hidden="true" tabindex="-1"></a>                    <span class="st">"Points Scored"</span> <span class="ot">=</span> <span class="st">"Points"</span>, </span>
+<span id="cb52-49"><a href="#cb52-49" aria-hidden="true" tabindex="-1"></a>                    <span class="st">"Home Team Total Points"</span> <span class="ot">=</span> <span class="st">"HomeScore"</span>, </span>
+<span id="cb52-50"><a href="#cb52-50" aria-hidden="true" tabindex="-1"></a>                    <span class="st">"Away Team Total Points"</span> <span class="ot">=</span> <span class="st">"AwayScore"</span>),</span>
+<span id="cb52-51"><a href="#cb52-51" aria-hidden="true" tabindex="-1"></a>        <span class="at">selected =</span> <span class="st">"Points"</span></span>
+<span id="cb52-52"><a href="#cb52-52" aria-hidden="true" tabindex="-1"></a>      ),</span>
+<span id="cb52-53"><a href="#cb52-53" aria-hidden="true" tabindex="-1"></a>      <span class="fu">uiOutput</span>(<span class="st">"slider2"</span>),</span>
+<span id="cb52-54"><a href="#cb52-54" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb52-55"><a href="#cb52-55" aria-hidden="true" tabindex="-1"></a>      <span class="fu">br</span>(),</span>
+<span id="cb52-56"><a href="#cb52-56" aria-hidden="true" tabindex="-1"></a>      <span class="fu">actionButton</span>(<span class="st">"apply_filters"</span>, <span class="st">"Apply Filters"</span>, <span class="at">class =</span> <span class="st">"btn-primary"</span>)</span>
+<span id="cb52-57"><a href="#cb52-57" aria-hidden="true" tabindex="-1"></a>    ),</span>
+<span id="cb52-58"><a href="#cb52-58" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mainPanel</span>(</span>
+<span id="cb52-59"><a href="#cb52-59" aria-hidden="true" tabindex="-1"></a>      <span class="fu">h3</span>(<span class="st">"Data Output"</span>),</span>
+<span id="cb52-60"><a href="#cb52-60" aria-hidden="true" tabindex="-1"></a>      <span class="fu">plotOutput</span>(<span class="st">"plot_output"</span>),</span>
+<span id="cb52-61"><a href="#cb52-61" aria-hidden="true" tabindex="-1"></a>      <span class="fu">tableOutput</span>(<span class="st">"subset_table"</span>)</span>
+<span id="cb52-62"><a href="#cb52-62" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb52-63"><a href="#cb52-63" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb52-64"><a href="#cb52-64" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb52-65"><a href="#cb52-65" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb52-66"><a href="#cb52-66" aria-hidden="true" tabindex="-1"></a><span class="co">#Server</span></span>
+<span id="cb52-67"><a href="#cb52-67" aria-hidden="true" tabindex="-1"></a>server <span class="ot">&lt;-</span> <span class="cf">function</span>(input, output, session){</span>
+<span id="cb52-68"><a href="#cb52-68" aria-hidden="true" tabindex="-1"></a>  output<span class="sc">$</span>slider1 <span class="ot">&lt;-</span> <span class="fu">renderUI</span>({</span>
+<span id="cb52-69"><a href="#cb52-69" aria-hidden="true" tabindex="-1"></a>    x <span class="ot">&lt;-</span> pbp_condensed[[input<span class="sc">$</span>number1]]</span>
+<span id="cb52-70"><a href="#cb52-70" aria-hidden="true" tabindex="-1"></a>    rang <span class="ot">&lt;-</span> <span class="fu">range</span>(x, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb52-71"><a href="#cb52-71" aria-hidden="true" tabindex="-1"></a>    <span class="fu">sliderInput</span>(<span class="st">"range1"</span>, </span>
+<span id="cb52-72"><a href="#cb52-72" aria-hidden="true" tabindex="-1"></a>                <span class="fu">paste</span>(<span class="st">"Range for"</span>, input<span class="sc">$</span>number1),</span>
+<span id="cb52-73"><a href="#cb52-73" aria-hidden="true" tabindex="-1"></a>                <span class="at">min =</span> <span class="fu">floor</span>(rang[<span class="dv">1</span>]), </span>
+<span id="cb52-74"><a href="#cb52-74" aria-hidden="true" tabindex="-1"></a>                <span class="at">max =</span> <span class="fu">ceiling</span>(rang[<span class="dv">2</span>]), </span>
+<span id="cb52-75"><a href="#cb52-75" aria-hidden="true" tabindex="-1"></a>                <span class="at">value =</span> rang)</span>
+<span id="cb52-76"><a href="#cb52-76" aria-hidden="true" tabindex="-1"></a>  })</span>
+<span id="cb52-77"><a href="#cb52-77" aria-hidden="true" tabindex="-1"></a>  output<span class="sc">$</span>slider2 <span class="ot">&lt;-</span> <span class="fu">renderUI</span>({</span>
+<span id="cb52-78"><a href="#cb52-78" aria-hidden="true" tabindex="-1"></a>    x <span class="ot">&lt;-</span> pbp_condensed[[input<span class="sc">$</span>number2]]</span>
+<span id="cb52-79"><a href="#cb52-79" aria-hidden="true" tabindex="-1"></a>    rang <span class="ot">&lt;-</span> <span class="fu">range</span>(x, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb52-80"><a href="#cb52-80" aria-hidden="true" tabindex="-1"></a>    <span class="fu">sliderInput</span>(<span class="st">"range2"</span>, </span>
+<span id="cb52-81"><a href="#cb52-81" aria-hidden="true" tabindex="-1"></a>                <span class="fu">paste</span>(<span class="st">"Range for"</span>, input<span class="sc">$</span>number2),</span>
+<span id="cb52-82"><a href="#cb52-82" aria-hidden="true" tabindex="-1"></a>                <span class="at">min =</span> <span class="fu">floor</span>(rang[<span class="dv">1</span>]), </span>
+<span id="cb52-83"><a href="#cb52-83" aria-hidden="true" tabindex="-1"></a>                <span class="at">max =</span> <span class="fu">ceiling</span>(rang[<span class="dv">2</span>]), </span>
+<span id="cb52-84"><a href="#cb52-84" aria-hidden="true" tabindex="-1"></a>                <span class="at">value =</span> rang)</span>
+<span id="cb52-85"><a href="#cb52-85" aria-hidden="true" tabindex="-1"></a>  })</span>
+<span id="cb52-86"><a href="#cb52-86" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb52-87"><a href="#cb52-87" aria-hidden="true" tabindex="-1"></a>  <span class="co">#Filters Logic</span></span>
+<span id="cb52-88"><a href="#cb52-88" aria-hidden="true" tabindex="-1"></a>  rv <span class="ot">&lt;-</span> <span class="fu">reactiveValues</span>(<span class="at">data =</span> pbp_condensed)</span>
+<span id="cb52-89"><a href="#cb52-89" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb52-90"><a href="#cb52-90" aria-hidden="true" tabindex="-1"></a>  <span class="fu">observeEvent</span>(input<span class="sc">$</span>apply_filters, {</span>
+<span id="cb52-91"><a href="#cb52-91" aria-hidden="true" tabindex="-1"></a>    df <span class="ot">&lt;-</span> pbp_condensed</span>
+<span id="cb52-92"><a href="#cb52-92" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb52-93"><a href="#cb52-93" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (input<span class="sc">$</span>quarter_filter <span class="sc">!=</span> <span class="st">"all"</span>) {</span>
+<span id="cb52-94"><a href="#cb52-94" aria-hidden="true" tabindex="-1"></a>      df <span class="ot">&lt;-</span> dplyr<span class="sc">::</span><span class="fu">filter</span>(df, QuarterLabel <span class="sc">==</span> input<span class="sc">$</span>quarter_filter)</span>
+<span id="cb52-95"><a href="#cb52-95" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb52-96"><a href="#cb52-96" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (input<span class="sc">$</span>outcome_filter <span class="sc">!=</span> <span class="st">"all"</span>){</span>
+<span id="cb52-97"><a href="#cb52-97" aria-hidden="true" tabindex="-1"></a>      df <span class="ot">&lt;-</span> dplyr<span class="sc">::</span><span class="fu">filter</span>(df, ShotOutcome <span class="sc">==</span> input<span class="sc">$</span>outcome_filter)</span>
+<span id="cb52-98"><a href="#cb52-98" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb52-99"><a href="#cb52-99" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb52-100"><a href="#cb52-100" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (<span class="sc">!</span><span class="fu">is.null</span>(input<span class="sc">$</span>range1)) {</span>
+<span id="cb52-101"><a href="#cb52-101" aria-hidden="true" tabindex="-1"></a>      v1 <span class="ot">&lt;-</span> input<span class="sc">$</span>number1</span>
+<span id="cb52-102"><a href="#cb52-102" aria-hidden="true" tabindex="-1"></a>      df <span class="ot">&lt;-</span> dplyr<span class="sc">::</span><span class="fu">filter</span>(</span>
+<span id="cb52-103"><a href="#cb52-103" aria-hidden="true" tabindex="-1"></a>        df,</span>
+<span id="cb52-104"><a href="#cb52-104" aria-hidden="true" tabindex="-1"></a>        <span class="sc">!</span><span class="fu">is.na</span>(.data[[v1]]),</span>
+<span id="cb52-105"><a href="#cb52-105" aria-hidden="true" tabindex="-1"></a>        .data[[v1]] <span class="sc">&gt;=</span> input<span class="sc">$</span>range1[<span class="dv">1</span>],</span>
+<span id="cb52-106"><a href="#cb52-106" aria-hidden="true" tabindex="-1"></a>        .data[[v1]] <span class="sc">&lt;=</span> input<span class="sc">$</span>range1[<span class="dv">2</span>]</span>
+<span id="cb52-107"><a href="#cb52-107" aria-hidden="true" tabindex="-1"></a>      )</span>
+<span id="cb52-108"><a href="#cb52-108" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb52-109"><a href="#cb52-109" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb52-110"><a href="#cb52-110" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (<span class="sc">!</span><span class="fu">is.null</span>(input<span class="sc">$</span>range2)) {</span>
+<span id="cb52-111"><a href="#cb52-111" aria-hidden="true" tabindex="-1"></a>      v2 <span class="ot">&lt;-</span> input<span class="sc">$</span>number2</span>
+<span id="cb52-112"><a href="#cb52-112" aria-hidden="true" tabindex="-1"></a>      df <span class="ot">&lt;-</span> dplyr<span class="sc">::</span><span class="fu">filter</span>(</span>
+<span id="cb52-113"><a href="#cb52-113" aria-hidden="true" tabindex="-1"></a>        df,</span>
+<span id="cb52-114"><a href="#cb52-114" aria-hidden="true" tabindex="-1"></a>        <span class="sc">!</span><span class="fu">is.na</span>(.data[[v2]]),</span>
+<span id="cb52-115"><a href="#cb52-115" aria-hidden="true" tabindex="-1"></a>        .data[[v2]] <span class="sc">&gt;=</span> input<span class="sc">$</span>range2[<span class="dv">1</span>],</span>
+<span id="cb52-116"><a href="#cb52-116" aria-hidden="true" tabindex="-1"></a>        .data[[v2]] <span class="sc">&lt;=</span> input<span class="sc">$</span>range2[<span class="dv">2</span>]</span>
+<span id="cb52-117"><a href="#cb52-117" aria-hidden="true" tabindex="-1"></a>      )</span>
+<span id="cb52-118"><a href="#cb52-118" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb52-119"><a href="#cb52-119" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb52-120"><a href="#cb52-120" aria-hidden="true" tabindex="-1"></a>    rv<span class="sc">$</span>data <span class="ot">&lt;-</span> df</span>
+<span id="cb52-121"><a href="#cb52-121" aria-hidden="true" tabindex="-1"></a>  })</span>
+<span id="cb52-122"><a href="#cb52-122" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb52-123"><a href="#cb52-123" aria-hidden="true" tabindex="-1"></a>  <span class="co">#Table output from the applied subset</span></span>
+<span id="cb52-124"><a href="#cb52-124" aria-hidden="true" tabindex="-1"></a>  output<span class="sc">$</span>subset_table <span class="ot">&lt;-</span> <span class="fu">renderTable</span>({</span>
+<span id="cb52-125"><a href="#cb52-125" aria-hidden="true" tabindex="-1"></a>    <span class="fu">validate</span>(<span class="fu">need</span>(<span class="fu">nrow</span>(rv<span class="sc">$</span>data) <span class="sc">&gt;</span><span class="dv">0</span> , <span class="st">"No rows match the current subset."</span>))</span>
+<span id="cb52-126"><a href="#cb52-126" aria-hidden="true" tabindex="-1"></a>    colmns <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"year"</span>,<span class="st">"QuarterLabel"</span>,<span class="st">"HomeTeam"</span>,<span class="st">"AwayTeam"</span>,<span class="st">"ShotType"</span>,<span class="st">"ShotOutcome"</span>,<span class="st">"ShotDist"</span>,<span class="st">"Points"</span>, <span class="st">"HomeScore"</span>,<span class="st">"AwayScore"</span>)</span>
+<span id="cb52-127"><a href="#cb52-127" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb52-128"><a href="#cb52-128" aria-hidden="true" tabindex="-1"></a>    rv<span class="sc">$</span>data <span class="sc">|&gt;</span></span>
+<span id="cb52-129"><a href="#cb52-129" aria-hidden="true" tabindex="-1"></a>    dplyr<span class="sc">::</span><span class="fu">select</span>(dplyr<span class="sc">::</span><span class="fu">all_of</span>(<span class="fu">intersect</span>(colmns, <span class="fu">names</span>(rv<span class="sc">$</span>data)))) <span class="sc">|&gt;</span></span>
+<span id="cb52-130"><a href="#cb52-130" aria-hidden="true" tabindex="-1"></a>    <span class="fu">head</span>(<span class="dv">15</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb52-131"><a href="#cb52-131" aria-hidden="true" tabindex="-1"></a>    dplyr<span class="sc">::</span><span class="fu">mutate</span>(<span class="at">year =</span> <span class="fu">as.character</span>(year))</span>
+<span id="cb52-132"><a href="#cb52-132" aria-hidden="true" tabindex="-1"></a>  })</span>
+<span id="cb52-133"><a href="#cb52-133" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb52-134"><a href="#cb52-134" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb52-135"><a href="#cb52-135" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb52-136"><a href="#cb52-136" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb52-137"><a href="#cb52-137" aria-hidden="true" tabindex="-1"></a><span class="co">#Running the App</span></span>
+<span id="cb52-138"><a href="#cb52-138" aria-hidden="true" tabindex="-1"></a><span class="fu">shinyApp</span>(<span class="at">ui =</span> ui, <span class="at">server =</span> server)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p></p><div style="width: 100% ; height: 400px ; text-align: center; box-sizing: border-box; -moz-box-sizing: border-box; -webkit-box-sizing: border-box;" class="muted well">Shiny applications not supported in static R Markdown documents</div><p></p>
+</div>
+</div>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+        const codeEl = trigger.previousElementSibling.cloneNode(true);
+        for (const childEl of codeEl.children) {
+          if (isCodeAnnotation(childEl)) {
+            childEl.remove();
+          }
+        }
+        return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
