@@ -281,7 +281,7 @@ pbp_condensed <- readRDS("data/nba_scoring_subset_1718.rds")
 
 #Defining the UI
 ui <- fluidPage(
-  titlePanel("NBA Play-by-Play Subsetting App"),
+  titlePanel("NBA Play-by-Play Scoring Eficiency (2017/2018) App"),
   
   sidebarLayout(
     sidebarPanel(
@@ -345,8 +345,6 @@ ui <- fluidPage(
             tags$li("Data Download: View and download the subsetted rows."),
             tags$li("Data Exploration: Quick categorical and numeric summaries/plots of the subset.")
           ),
-          br(),
-          tags$img(src = "nba.png")
         ),
         
         tabPanel(
@@ -526,6 +524,52 @@ server <- function(input, output, session){
         s <- tapply(v, g, summary)
         print(s)
       }
+    }
+  })
+  #Data Exploration Plots
+  output$explore_plot <- renderPlot({
+    validate(need(nrow(rv$data) > 0, "No rows match the current subset."))
+    
+    if (input$exp_mode == "cat") {
+      c1 <- input$exp_cat1
+      c2 <- input$exp_cat2
+      df <- rv$data
+      validate(need(c1 %in% names(df), paste("Column", c1, "not found.")))
+      df[[c1]] <- as.factor(df[[c1]])
+      
+      if (c2 == "None") { 
+        ggplot(df, aes(x = .data[[c1]])) + geom_bar() + labs(x = c1, y = "Count")
+      } else {
+        validate(need(c2 %in% names(df), paste("Column", c2, "not found.")))
+        df[[c2]] <- as.factor(df[[c2]])
+        ggplot(df, aes(x = .data[[c1]], fill = .data[[c2]])) + geom_bar(position = "dodge") + 
+          labs(x = c1, y = "Count", fill = c2)
+      }
+    } else {
+      #Numeric Variable Plots
+      num <-input$exp_num
+      grp <- input$exp_group
+      df <- rv$data
+      validate(need(num %in% names(df), paste("Column", num, "not found.")))
+      validate(need(is.numeric(df[[num]]), paste(num, "must be numeric.")))
+      
+      if (grp == "None") {
+        if (input$exp_plot_type == "hist") {
+          ggplot(df, aes(x = .data[[num]])) + geom_histogram(bins = 25) + labs(x = num, y = "Frequency")
+        } else {
+          ggplot(df, aes(y = .data[[num]])) + geom_boxplot() + labs(y = num)
+        }
+      } else {
+      validate(need(grp %in% names(df), paste("Grouping column", grp, "not found.")))
+      df[[grp]] <- as.factor(df[[grp]])
+      if (input$exp_plot_type == "hist") {
+         ggplot(df, aes(x = .data[[num]], fill = .data[[grp]])) + geom_histogram(bins = 25) + 
+          labs(x = num, y = "Frequency", fill = grp)
+      } else {
+        ggplot(df, aes(x = .data[[grp]], y = .data[[num]])) + geom_boxplot + labs(x = grp, y = num)
+      }
+      }
+      
     }
   })
 }

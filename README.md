@@ -1,4 +1,4 @@
-## NBA Play-by-Play Subsetting (Summary/Plot Producing) App
+## NBA Play-by-Play Scoring Eficiency (2017/2018) App
 
 **Author**: Chandler Weedon **Date**: November 2025 **ST558 - Project 2**
 
