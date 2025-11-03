@@ -407,6 +407,8 @@ ui <- fluidPage(
 
 #Server
 server <- function(input, output, session){
+  
+  #Dynamic Sliders
   output$slider1 <- renderUI({
     x <- pbp_condensed[[input$number1]]
     rang <- range(x, na.rm = TRUE)
@@ -462,16 +464,26 @@ server <- function(input, output, session){
     rv$data <- df
   })
   
-  #Table output from the applied subset
-  output$subset_table <- renderTable({
+  #Data Download Tab
+  output$data_table <- DT::renderDataTable({
     validate(need(nrow(rv$data) >0 , "No rows match the current subset."))
-    colmns <- c("year","QuarterLabel","HomeTeam","AwayTeam","ShotType","ShotOutcome","ShotDist","Points", "HomeScore","AwayScore")
-    
-    rv$data |>
-    dplyr::select(dplyr::all_of(intersect(colmns, names(rv$data)))) |>
-    head(15) |> 
-    dplyr::mutate(year = as.character(year))
-  })
+    cols <- c("year","QuarterLabel","HomeTeam","AwayTeam","ShotType","ShotOutcome","ShotDist","Points", "HomeScore","AwayScore")
+    keep <- intersect(cols, names(rv$data))
+    out <- rv$data[keep]
+    if ("year" %in% names(out)) out$year <- as.character(out$year)
+    out
+  }, options = list(pageLength = 15))
+  
+  output$download_csv <- downloadHandler(
+    filename = function() paste0("nba_subset_", Sys.Date(), ".csv"),
+    content = function(file) {
+      req(nrow(rv$data) > 0)
+      write.csv(rv$data, file, row.names = FALSE)
+    },
+    contentType = "text/csv"
+  )
+  
+  #Data Exploration Tab
 }
 
 
