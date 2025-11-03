@@ -484,6 +484,50 @@ server <- function(input, output, session){
   )
   
   #Data Exploration Tab
+  
+  #Helper Function
+  getcol <- function(df, nm) {
+    if (nm %in% names(df)) {
+      df[[nm]]
+    } else { NULL }
+  }
+  
+  #Summaries
+  output$summary_text <- renderPrint({
+    validate(need(nrow(rv$data) > 0, "No rows match the current subset."))
+    
+    if (input$exp_mode == "cat") {
+      c1 <- input$exp_cat1
+      c2 <- input$exp_cat2
+      x <- getcol(rv$data, c1)
+      validate(need(!is.null(x), paste("Column", c1, "not found.")))
+      
+      if (c2 == "None") {
+        print(table(as.character(x), useNA = "no"))
+      } else{
+        y <- getcol(rv$data, c2)
+        validate(need(!is.null(y), paste("Column", c2, "not found.")))
+        print(addmargins(table(as.character(x), as.character(y), useNA = "no")))
+      }
+      
+      #Numeric Summaries
+    } else { 
+      num <- input$exp_num
+      grp <- input$exp_group
+      v <- getcol(rv$data, num)
+      validate(need(is.numeric(v), paste(num, "must be numeric.")))
+      
+      if (grp == "None") {
+        print(summary(v))
+      } else { 
+        g <- getcol(rv$data, grp)
+        validate(need(!is.null(g), paste("Grouping column", grp, "not found.")))
+        g <- as.character(g)
+        s <- tapply(v, g, summary)
+        print(s)
+      }
+    }
+  })
 }
 
 
