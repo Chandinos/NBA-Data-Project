@@ -5,6 +5,6 @@ account: chandinos
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 15960164
-bundleId: 11129521
+bundleId: 11129783
 url: https://chandinos.shinyapps.io/nba-data-project/
 version: 1

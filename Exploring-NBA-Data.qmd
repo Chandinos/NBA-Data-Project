@@ -2,8 +2,7 @@
 title: "NBA Play-by-Play Data Project"
 format: html
 editor: visual
-execute: 
-  shiny: true
+server: shiny
 ---
 
 ```{r}
@@ -278,12 +277,16 @@ library(tidyverse)
 library(shiny)
 library(DT)
 
-#Reloading Data Set for reproducibility
-pbp_condensed <- readRDS("data/nba_scoring_subset_1718.rds")
+#Relative path to data
+data_path <- file.path("data", "nba_scoring_subset_1718.rds")
+if (!file.exists(data_path)) {
+  stop("Missing data file at: ", normalizePath(data_path, mustWork = FALSE))
+}
+pbp_condensed <- readRDS(data_path)
 
 #Defining the UI
 ui <- fluidPage(
-  titlePanel("NBA Play-by-Play Scoring Eficiency (2017/2018) App"),
+  titlePanel("NBA Play-by-Play Scoring Efficiency (2017/2018) App"),
   
   sidebarLayout(
     sidebarPanel(
@@ -302,7 +305,7 @@ ui <- fluidPage(
         choiceNames = c("All", "Made", "Missed"),
         choiceValues = c("all", "make", "miss")
       ),
-    
+      
       #Numeric Variables
       h2("Numeric Variable Filters"),
       selectInput(
@@ -326,7 +329,7 @@ ui <- fluidPage(
         selected = "Points"
       ),
       uiOutput("slider2"),
-    
+      
       br(),
       actionButton("apply_filters", "Apply Filters", class = "btn-primary")
     ),
@@ -346,7 +349,7 @@ ui <- fluidPage(
             tags$li("Sidebar: Choose categorical filters and two numeric range filters."),
             tags$li("Data Download: View and download the subsetted rows."),
             tags$li("Data Exploration: Quick categorical and numeric summaries/plots of the subset.")
-          ),
+          )
         ),
         
         tabPanel(
@@ -562,23 +565,19 @@ server <- function(input, output, session){
           ggplot(df, aes(y = .data[[num]])) + geom_boxplot() + labs(y = num)
         }
       } else {
-      validate(need(grp %in% names(df), paste("Grouping column", grp, "not found.")))
-      df[[grp]] <- as.factor(df[[grp]])
-      if (input$exp_plot_type == "hist") {
-         ggplot(df, aes(x = .data[[num]], fill = .data[[grp]])) + geom_histogram(bins = 25) + 
-          labs(x = num, y = "Frequency", fill = grp)
-      } else {
-        ggplot(df, aes(x = .data[[grp]], y = .data[[num]])) + geom_boxplot + labs(x = grp, y = num)
-      }
+        validate(need(grp %in% names(df), paste("Grouping column", grp, "not found.")))
+        df[[grp]] <- as.factor(df[[grp]])
+        if (input$exp_plot_type == "hist") {
+          ggplot(df, aes(x = .data[[num]], fill = .data[[grp]])) + geom_histogram(bins = 25) + 
+            labs(x = num, y = "Frequency", fill = grp)
+        } else {
+          ggplot(df, aes(x = .data[[grp]], y = .data[[num]])) + geom_boxplot() + labs(x = grp, y = num)
+        }
       }
       
     }
   })
 }
-
-
-  
-  
 #Running the App
 shinyApp(ui = ui, server = server)
 ```

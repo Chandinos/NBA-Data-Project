@@ -1,0 +1,10 @@
+name: nba-pbp-scoring_efficiency-app
+title:
+username: chandinos
+account: chandinos
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 15962055
+bundleId: 11130215
+url: https://chandinos.shinyapps.io/nba-pbp-scoring_efficiency-app/
+version: 1
