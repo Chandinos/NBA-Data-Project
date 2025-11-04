@@ -2,6 +2,8 @@
 title: "NBA Play-by-Play Data Project"
 format: html
 editor: visual
+execute: 
+  shiny: true
 ---
 
 ```{r}
